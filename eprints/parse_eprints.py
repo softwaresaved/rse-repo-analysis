@@ -1,0 +1,153 @@
+import requests
+from lxml import etree
+import re
+import argparse
+import sys
+import json
+from io import BytesIO
+from pdfminer.high_level import extract_text_to_fp
+
+def get_paper_list(repo, date, path):
+    """Sends request to repository for papers in the specified date range. Writes output to XML file.
+
+    Args:
+        repo (str): domain name of ePrints repository
+        date (str): date range to consider
+        path (str): path to write XML data to
+    """
+    request = f"https://{repo}/cgi/search/archive/advanced?screen=Search&" \
+                "output=XML&" \
+                "_action_export_redir=Export&" \
+                "dataset=archive&" \
+                "_action_search=Search&" \
+                "documents_merge=ALL&" \
+                "documents=&" \
+                "eprintid=&" \
+                "title_merge=ALL&" \
+                "title=&" \
+                "contributors_name_merge=ALL&" \
+                "contributors_name=&" \
+                "abstract_merge=ALL&" \
+                "abstract=&" \
+                f"date={date}&" \
+                "keywords_merge=ALL&" \
+                "keywords=&" \
+                "divisions_merge=ANY&" \
+                "pres_type=paper&" \
+                "refereed=EITHER&" \
+                "publication%2Fseries_name_merge=ALL&" \
+                "publication%2Fseries_name=&" \
+                "documents.date_embargo=&" \
+                "lastmod=&" \
+                "pure_uuid=&" \
+                "contributors_id=&" \
+                "satisfyall=ALL&" \
+                "order=contributors_name%2F-date%2Ftitle"
+    response = requests.get(request)
+    with open(path, "wb") as f:
+        f.write(response.content)
+
+def get_specific_fields_content(element, field_name):
+    """Returns content of XML fields of a specific name of an element.
+
+    Args:
+        element (lxml.etree._Element): XML element to analyse
+        field_name (str): name of field to look for
+
+    Returns:
+        list<str>: list of contents found in children of element of given name
+    """
+    contents = []
+    for child in list(element):
+        if field_name in child.tag:
+            contents.append(child.text)
+    return contents
+
+def get_specific_fields_elements(element, field_name):
+    """Returns XML subelements of the given element with the given name.
+
+    Args:
+        element (lxml.etree._Element): XML element to analyse
+        field_name (str): name of field to look for
+
+    Returns:
+        list<lxml.etree._Element>: list of children found of the given name
+    """
+    elements = []
+    for child in list(element):
+        if field_name in child.tag:
+            elements.append(child)
+    return elements
+
+def parse_pdf_urls(path):
+    """Extracts download URLs of PDFs from XML file.
+
+    Args:
+        path (str): path to XML file
+
+    Yields:
+        str: download URL for PDF
+    """
+    with open(path, "rb") as f:
+        tree = etree.parse(f)
+    root = tree.getroot()
+    children = list(root)
+    for c in children:
+        urls = []
+        documents_holders = get_specific_fields_elements(c, "documents")
+        for documents_list in documents_holders:
+            documents = get_specific_fields_elements(documents_list, "document")
+            for document in documents:
+                files_holders = get_specific_fields_elements(document, "files")
+                for files_list in files_holders:
+                    files = get_specific_fields_elements(files_list, "file")
+                    for file in files:
+                        urls += get_specific_fields_content(file, "url")
+        if len(urls) > 0:  # NOTE: can sometimes include jpegs, docx etc. - caught through excdeptions right now, might want to refine later
+            yield urls
+
+def get_domain_urls(pdf_url, domain):
+    """Yields matches of URLs of the domain in the PDF.
+
+    Args:
+        pdf_url (str): download URL of PDF
+        domain (str): domain to scan for, e.g. github.com
+
+    Yields:
+        str: found URL
+    """
+    pdf = requests.get(pdf_url)
+    if pdf.status_code == 200 and "pdf" in pdf.headers['content-type']:
+        print(pdf_url)
+        out = BytesIO()
+        try:
+            extract_text_to_fp(BytesIO(pdf.content), out, output_type="text")
+            text = out.getvalue().decode("utf-8")
+            pattern = rf"(?P<url>https?://(www.)?{domain}[^\s]+)"
+            for match in re.finditer(pattern, text):
+                yield match.group("url")
+        except Exception:
+            pass
+
+def main(repo, date, domain, local):
+    path = f"export_{repo}_{date}.xml"
+    if not local:
+        get_paper_list(repo, date, path)
+    pdf_dict = {}
+    for pdf_urls in parse_pdf_urls(path):
+        for pdf_url in pdf_urls:
+            pdf_dict[pdf_url] = []
+            for git_url in get_domain_urls(pdf_url, domain):
+                pdf_dict[pdf_url].append(git_url)
+    print(pdf_dict)
+    with open("git_urls_from_eprints.json", "w") as f:
+        json.dump(pdf_dict, f)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--repo", required=True, type=str, help="name of ePrints repository (i.e. domain)")
+    parser.add_argument("--date", required=True, type=str, help="date range for filtering ePrints, e.g. 2021-2022")
+    parser.add_argument("--domain", required=True, type=str, help="domain to match against (only one can be provided for now)")
+    parser.add_argument("--local", action="store_true", help="use local ePrints XML output instead of downloading from web")
+    args = parser.parse_args()
+    main(args.repo, args.date, args.domain, args.local)
