@@ -103,10 +103,10 @@ def parse_pdf_urls(path):
                     files = get_specific_fields_elements(files_list, "file")
                     for file in files:
                         urls += get_specific_fields_content(file, "url")
-        if len(urls) > 0:  # NOTE: can sometimes include jpegs, docx etc. - caught through excdeptions right now, might want to refine later
+        if len(urls) > 0:  # NOTE: can sometimes include jpegs, docx etc.
             yield urls
 
-def get_domain_urls(pdf_url, domain):
+def get_domain_urls(pdf_url, domain, verbose):
     """Yields matches of URLs of the domain in the PDF.
 
     Args:
@@ -118,7 +118,8 @@ def get_domain_urls(pdf_url, domain):
     """
     pdf = requests.get(pdf_url)
     if pdf.status_code == 200 and "pdf" in pdf.headers['content-type']:
-        print(pdf_url)
+        if verbose:
+            print(pdf_url)
         out = BytesIO()
         try:
             extract_text_to_fp(BytesIO(pdf.content), out, output_type="text")
@@ -129,25 +130,33 @@ def get_domain_urls(pdf_url, domain):
         except Exception:
             pass
 
-def main(repo, date, domain, local):
-    path = f"export_{repo}_{date}.xml"
+def main(repo, date, domain, local, verbose):
+    path = f"data/export_{repo}_{date}.xml"
     if not local:
         get_paper_list(repo, date, path)
+        if verbose:
+            print("Downloaded XML list of publications.")
     pdf_dict = {}
     for pdf_urls in parse_pdf_urls(path):
         for pdf_url in pdf_urls:
             pdf_dict[pdf_url] = []
-            for git_url in get_domain_urls(pdf_url, domain):
+            for git_url in get_domain_urls(pdf_url, domain, verbose):
                 pdf_dict[pdf_url].append(git_url)
-    print(pdf_dict)
-    with open("git_urls_from_eprints.json", "w") as f:
+    if verbose:
+        print(f"Extracted URLs of domain {domain}:")
+        print(pdf_dict)
+    with open(f"data/urls_{repo}_{date}.json", "w") as f:
         json.dump(pdf_dict, f)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        prog="parse_eprints",
+        description="Query ePrints repository for publications, scan the downloadable publications for links of a specific domain name, e.g. github.com."
+    )
     parser.add_argument("--repo", required=True, type=str, help="name of ePrints repository (i.e. domain)")
     parser.add_argument("--date", required=True, type=str, help="date range for filtering ePrints, e.g. 2021-2022")
-    parser.add_argument("--domain", required=True, type=str, help="domain to match against (only one can be provided for now)")
+    parser.add_argument("--domain", required=True, type=str, help="domain to match against (only one can be provided for now, e.g. github.com)")
     parser.add_argument("--local", action="store_true", help="use local ePrints XML output instead of downloading from web")
+    parser.add_argument("-v", "--verbose", action="store_true", help="enable verbose output")
     args = parser.parse_args()
-    main(args.repo, args.date, args.domain, args.local)
+    main(args.repo, args.date, args.domain, args.local, args.verbose)
