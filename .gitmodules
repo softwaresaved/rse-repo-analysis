@@ -1,0 +1,3 @@
+[submodule "software-mentions"]
+	path = software-mentions
+	url = git@github.com:karacolada/software-mentions.git
