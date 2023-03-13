@@ -145,8 +145,8 @@ def main(repo, date, domain, local, verbose):
     if verbose:
         print(f"Extracted URLs of domain {domain}:")
         print(pdf_dict)
-    with open(f"data/urls_{repo}_{date}.json", "w") as f:
-        json.dump(pdf_dict, f)
+    with open(f"data/extracted_urls_{repo}_{date}_{domain}.json", "w") as f:
+        json.dump(pdf_dict, f, indent=4)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
