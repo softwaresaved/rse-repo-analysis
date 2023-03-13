@@ -56,7 +56,9 @@ def clean_by_user(pattern_cleaned_links, verbose):
             _, username, repo_name = l.split("/")
             try:
                 r = g.get_repo(f"{username}/{repo_name}")
-                cleaned_links[paper].append({"user": username, "repo": repo_name})
+                entry = {"user": username, "repo": repo_name}
+                if entry not in cleaned_links[paper]:
+                    cleaned_links[paper].append(entry)
             except GithubException:
                 user = g.get_user(username)
                 bestmatch = ""
@@ -67,7 +69,9 @@ def clean_by_user(pattern_cleaned_links, verbose):
                         bestmatch = r.name
                         maxratio = ratio
                 if bestmatch != "":
-                    cleaned_links[paper].append({"user": username, "repo": bestmatch})
+                    entry = {"user": username, "repo": bestmatch}
+                    if entry not in cleaned_links[paper]:
+                        cleaned_links[paper].append(entry)
                     if verbose:
                         print(f"Matched user {username}'s repo {bestmatch} with extracted link {l}.")
     return cleaned_links
