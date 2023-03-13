@@ -135,4 +135,5 @@ dmypy.json
 **/config.cfg
 
 # data
-**/data/
+**/data/*
+!eprints/data/representative_set.csv
