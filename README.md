@@ -48,6 +48,9 @@ Inside the environment, install the following packages:
 - [`lxml`](https://lxml.de) for parsing XMLs
 - [`pdfminer.six`](https://pdfminersix.readthedocs.io/en/latest/) for parsing PDFs
   - not to be confused with [`pdfminer`](https://github.com/euske/pdfminer), which is no longer actively maintained
+- [`pySpark`](https://spark.apache.org)
+  - depends on Java (e.g. OpenJDK)
+  - depends on `pyarrow`
 
 #### GitHub API
 
