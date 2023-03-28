@@ -69,7 +69,7 @@ def crawl_repos(df):
                 - license: license key if license was found (e.g. mit, lgpl-3.0, mpl-2.0, ... (https://docs.github.com/en/rest/licenses?apiVersion=2022-11-28#get-all-commonly-used-licenses))
                 - readme_size: size of README file, 0 if none was found
     """
-    repo_links = df.apply(compose_repo_link, axis=1, raw=True)
+    repo_links = df.apply(compose_repo_link, axis=1, raw=True)  # CAUTION: assumes that column 0 is user, column 1 is repo
     contributions = repo_links.apply(query_contributions, args=(Github(get_access_token()),))
     contents = repo_links.apply(query_contents, args=(Github(get_access_token()),))
     contributions = np.concatenate(contributions.tolist())

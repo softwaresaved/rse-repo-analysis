@@ -2,8 +2,7 @@ import requests
 from lxml import etree
 import re
 import argparse
-import sys
-import json
+import pandas as pd
 from io import BytesIO
 from pdfminer.high_level import extract_text_to_fp
 
@@ -59,7 +58,7 @@ def get_specific_fields_content(element, field_name):
     """
     contents = []
     for child in list(element):
-        if field_name in child.tag:
+        if field_name == etree.QName(child.tag).localname:
             contents.append(child.text)
     return contents
 
@@ -75,7 +74,7 @@ def get_specific_fields_elements(element, field_name):
     """
     elements = []
     for child in list(element):
-        if field_name in child.tag:
+        if field_name == etree.QName(child.tag).localname:
             elements.append(child)
     return elements
 
@@ -86,7 +85,7 @@ def parse_pdf_urls(path):
         path (str): path to XML file
 
     Yields:
-        str: download URL for PDF
+        dict: contains title, download URL for PDF, name of one of the authors
     """
     with open(path, "rb") as f:
         tree = etree.parse(f)
@@ -94,6 +93,10 @@ def parse_pdf_urls(path):
     children = list(root)
     for c in children:
         urls = []
+        title = get_specific_fields_content(c, "title")[0]
+        creators = get_specific_fields_elements(c, "creators")
+        author_for_reference = get_specific_fields_elements(get_specific_fields_elements(creators[0], "item")[0], "name")[0]
+        author_name_for_reference = f"{get_specific_fields_content(author_for_reference, 'given')[0]} {get_specific_fields_content(author_for_reference, 'family')[0]}"
         documents_holders = get_specific_fields_elements(c, "documents")
         for documents_list in documents_holders:
             documents = get_specific_fields_elements(documents_list, "document")
@@ -104,7 +107,7 @@ def parse_pdf_urls(path):
                     for file in files:
                         urls += get_specific_fields_content(file, "url")
         if len(urls) > 0:  # NOTE: can sometimes include jpegs, docx etc.
-            yield urls
+            yield {"title": title, "urls": urls, "author_for_reference": author_name_for_reference}
 
 def get_domain_urls(pdf_url, domain, verbose):
     """Yields matches of URLs of the domain in the PDF.
@@ -119,7 +122,7 @@ def get_domain_urls(pdf_url, domain, verbose):
     pdf = requests.get(pdf_url)
     if pdf.status_code == 200 and "pdf" in pdf.headers['content-type']:
         if verbose:
-            print(pdf_url)
+            print(f"Parsing {pdf_url}")
         out = BytesIO()
         try:
             extract_text_to_fp(BytesIO(pdf.content), out, output_type="text")
@@ -136,17 +139,17 @@ def main(repo, date, domain, local, verbose):
         get_paper_list(repo, date, path)
         if verbose:
             print("Downloaded XML list of publications.")
-    pdf_dict = {}
-    for pdf_urls in parse_pdf_urls(path):
-        for pdf_url in pdf_urls:
-            pdf_dict[pdf_url] = []
+    pdf_dict = {'title': [], 'author_for_reference': [], 'url': []}
+    for temp_dict in parse_pdf_urls(path):
+        for pdf_url in temp_dict['urls']:
             for git_url in get_domain_urls(pdf_url, domain, verbose):
-                pdf_dict[pdf_url].append(git_url)
+                pdf_dict['title'].append(temp_dict['title'])
+                pdf_dict['author_for_reference'].append(temp_dict['author_for_reference'])
+                pdf_dict['url'].append(git_url)
     if verbose:
-        print(f"Extracted URLs of domain {domain}:")
-        print(pdf_dict)
-    with open(f"data/extracted_urls_{repo}_{date}_{domain}.json", "w") as f:
-        json.dump(pdf_dict, f, indent=4)
+        print(f"Extracted URLs of domain {domain}.")
+    df = pd.DataFrame(pdf_dict)
+    df.to_csv(f"data/extracted_urls_{repo}_{date}_{domain}.csv", index=False)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
