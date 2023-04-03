@@ -37,12 +37,12 @@ def query_contents(repo_link: str, g: Github):
     except:
         print(f"Could not resolve repository for URL {repo_link}.")
         return None
-    try:
+    try:  # LICENSE
         license_file = repo.get_license()
         license_entry = license_file.license.key
     except:
         license_entry = None
-    try:
+    try:  # README.md
         readme = repo.get_readme()
         readme_entry = readme.size
         readme_content = readme.decoded_content.decode()
@@ -56,8 +56,12 @@ def query_contents(repo_link: str, g: Github):
         readme_entry = 0
         cleaned_headings = [None]
         readme_emojis = 0
+    try:  # CONTRIBUTING
+        contrib_file_size = repo.get_contents("CONTRIBUTING.md").size
+    except:
+        contrib_file_size = 0
     for h in cleaned_headings:
-        contents.append([repo_link, license_entry, readme_entry, h, readme_emojis])
+        contents.append([repo_link, license_entry, readme_entry, h, readme_emojis, contrib_file_size])
     contents = np.array(contents)
     return contents
 
@@ -81,6 +85,7 @@ def crawl_repos(df, name):
                 - readme_size: size of README file, 0 if none was found
                 - readme_headings: headings found in README files
                 - readme_emojis: number of emojis found in README file
+                - contributing_size: size of CONTRIBUTING.md file, 0 if none was found
     """
     repo_links = df[name]
     contributions = repo_links.apply(query_contributions, args=(Github(get_access_token()),))
@@ -88,7 +93,7 @@ def crawl_repos(df, name):
     contributions = np.concatenate(contributions.tolist())
     contents = np.concatenate(contents.tolist())
     contributions_df = pd.DataFrame(contributions, columns=['repo_link', 'author', 'year', 'week', 'commits'])
-    contents_df = pd.DataFrame(contents, columns=['repo_link', 'license', 'readme_size', 'readme_headings', 'readme_emojis'])
+    contents_df = pd.DataFrame(contents, columns=['repo_link', 'license', 'readme_size', 'readme_headings', 'readme_emojis', 'contributing_size'])
     return contributions_df, contents_df
 
 def main(path, name, verbose):
