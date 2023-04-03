@@ -51,6 +51,8 @@ Inside the environment, install the following packages:
 - [`pySpark`](https://spark.apache.org)
   - depends on Java (e.g. OpenJDK)
   - depends on `pyarrow`
+- [`emoji`](https://carpedm20.github.io/emoji/docs/)
+- `Levenshtein`
 
 #### GitHub API
 
