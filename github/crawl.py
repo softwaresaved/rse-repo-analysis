@@ -13,6 +13,19 @@ def get_access_token():
     config.read('../config.cfg')
     return config['ACCESS']['token']
 
+def query_issues(repo_link: str, g: Github):
+    issues = []
+    try:
+        repo = g.get_repo(repo_link)
+    except:
+        print(f"Could not resolve repository for URL {repo_link}.")
+        return None
+    issues_paged = repo.get_issues(state='all')
+    for i in issues_paged:
+        issues.append([i.state, i.created_at, i.user.login, i.closed_at, i.closed_by])
+    issues = np.array(issues)
+    return issues
+
 def query_contributions(repo_link: str, g: Github):
     contributions = []
     try:
@@ -90,11 +103,14 @@ def crawl_repos(df, name):
     repo_links = df[name]
     contributions = repo_links.apply(query_contributions, args=(Github(get_access_token()),))
     contents = repo_links.apply(query_contents, args=(Github(get_access_token()),))
+    issues = repo_links.apply(query_issues, args=(Github(get_access_token()),))
     contributions = np.concatenate(contributions.tolist())
     contents = np.concatenate(contents.tolist())
+    issues = np.concatenate(issues.tolist())
     contributions_df = pd.DataFrame(contributions, columns=['repo_link', 'author', 'year', 'week', 'commits'])
     contents_df = pd.DataFrame(contents, columns=['repo_link', 'license', 'readme_size', 'readme_headings', 'readme_emojis', 'contributing_size'])
-    return contributions_df, contents_df
+    issues_df = pd.DataFrame(issues, columns=["state", "created_at", "user", "closed_at", "closed_by"])
+    return contributions_df, contents_df, issues_df
 
 def main(path, name, verbose):
     #spark = SparkSession.builder.getOrCreate()
@@ -102,9 +118,10 @@ def main(path, name, verbose):
     df = pd.read_csv(path)
     #df = df.withColumn("output", graze_repo("user_name", "repo_name"))
     #df.select(combine("user_name", "repo_name")).show()
-    contributions_df, contents_df = crawl_repos(df, name)
+    contributions_df, contents_df, issues_df = crawl_repos(df, name)
     contributions_df.to_csv(f'data/contributions.csv')
     contents_df.to_csv(f'data/contents.csv')
+    issues_df.to_csv(f'data/issues.csv')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
