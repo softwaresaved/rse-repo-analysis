@@ -21,8 +21,10 @@ def query_issues(repo_link: str, g: Github):
         print(f"Could not resolve repository for URL {repo_link}.")
         return None
     issues_paged = repo.get_issues(state='all')
+    if issues_paged.totalCount == 0:
+        issues.append([repo_link, None, None, None, None, None])
     for i in issues_paged:
-        issues.append([i.state, i.created_at, i.user.login, i.closed_at, i.closed_by])
+        issues.append([repo_link, i.state, i.created_at, i.user.login, i.closed_at, i.closed_by])
     issues = np.array(issues)
     return issues
 
@@ -108,8 +110,10 @@ def crawl_repos(df, name):
     contents = np.concatenate(contents.tolist())
     issues = np.concatenate(issues.tolist())
     contributions_df = pd.DataFrame(contributions, columns=['repo_link', 'author', 'year', 'week', 'commits'])
+    contributions_df.dropna(axis=0, how='all', subset=['author', 'year', 'week', 'commits'], inplace=True)
     contents_df = pd.DataFrame(contents, columns=['repo_link', 'license', 'readme_size', 'readme_headings', 'readme_emojis', 'contributing_size'])
-    issues_df = pd.DataFrame(issues, columns=["state", "created_at", "user", "closed_at", "closed_by"])
+    issues_df = pd.DataFrame(issues, columns=['repo_link', 'state', 'created_at', 'user', 'closed_at', 'closed_by'])
+    issues_df.dropna(axis=0, how='all', subset=['state'], inplace=True)
     return contributions_df, contents_df, issues_df
 
 def main(path, name, verbose):
