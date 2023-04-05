@@ -95,8 +95,12 @@ def parse_pdf_urls(path):
         urls = []
         title = get_specific_fields_content(c, "title")[0]
         creators = get_specific_fields_elements(c, "creators")
-        author_for_reference = get_specific_fields_elements(get_specific_fields_elements(creators[0], "item")[0], "name")[0]
-        author_name_for_reference = f"{get_specific_fields_content(author_for_reference, 'given')[0]} {get_specific_fields_content(author_for_reference, 'family')[0]}"
+        try:
+            author_for_reference = get_specific_fields_elements(get_specific_fields_elements(creators[0], "item")[0], "name")[0]
+            author_name_for_reference = f"{get_specific_fields_content(author_for_reference, 'given')[0]} {get_specific_fields_content(author_for_reference, 'family')[0]}"
+        except IndexError:
+            print(f"No athor found for {title}.")
+            author_name_for_reference = ""
         documents_holders = get_specific_fields_elements(c, "documents")
         for documents_list in documents_holders:
             documents = get_specific_fields_elements(documents_list, "document")
