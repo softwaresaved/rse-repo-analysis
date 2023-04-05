@@ -76,7 +76,20 @@ You can download the dataset [here](https://datadryad.org/stash/dataset/doi:10.5
 
 ## Usage
 
-*Usage examples will follow once the project is more advanced.*
+ePrints:
+- [`eprints/parse_eprints.py`](eprints/parse_eprints.py): Download XML data from an ePrints repository, perform a free-text search for any text containing the specified domain. Pass flag `--local` if you have already downloaded the XML data and want to process it locally.
+- [`eprints/clean_eprints_links.py`](eprints/clean_eprints_links.py): Process extracted links using pattern matching and, optionally, user matching to ensure the extracted links are correct and reachable.
+- [`extract_links_from_eprints.sh`](eprints/extract_links_from_eprints.sh): Executes both scripts.
+
+GitHub (see also [GitHub API](#github-api)):
+- [`github/crawl.py`](github/crawl.py): Takes CSV file and column name as argument. Crawls GitHub for info on the repositories named in the CSV file (issues, commits, contents) and stores them in a CSV file.
+
+Utilities:
+- [`utilities/create_representative_set_github.py`](utilities/create_representative_set_github.py): As the name suggests, samples a set of 100 GitHub repositories (not specifically research software) based on the number of stars a repository has. Produces a distribution of different repository sizes and forks. Useful for testing GitHub crawling code and estimating resulting dataset sizes.
+
+### Data
+
+Data is collected into [`data`](data/). Scripts will assume that all data collected in previous stages of the analysis are located here.
 
 ## References
 

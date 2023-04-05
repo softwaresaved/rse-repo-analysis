@@ -4,8 +4,8 @@ import re
 import pandas as pd
 import numpy as np
 from github import Github
-from pyspark.sql import SparkSession  # couldn't get this to work, throws AssertionError when pandas_udf are useda
-from tqdm import tqdm
+#from pyspark.sql import SparkSession  # couldn't get this to work, throws AssertionError when pandas_udf are useda
+#from tqdm import tqdm
 from emoji import emoji_count
 
 def get_access_token():
@@ -94,7 +94,7 @@ def crawl_repos(df, name):
                 - author: contributor to repository
                 - year, week: determine the week of contributions in question
                 - commits: number of commits in that specific week
-            - license dataframe columns:
+            - contents dataframe columns:
                 - repo_link: GitHub ID from original data frame
                 - license: license key if license was found (e.g. mit, lgpl-3.0, mpl-2.0, ... (https://docs.github.com/en/rest/licenses?apiVersion=2022-11-28#get-all-commonly-used-licenses))
                 - readme_size: size of README file, 0 if none was found

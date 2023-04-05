@@ -134,7 +134,7 @@ def get_domain_urls(pdf_url, domain, verbose):
             pass
 
 def main(repo, date, domain, local, verbose):
-    path = f"data/export_{repo}_{date}.xml"
+    path = f"../data/export_{repo}_{date}.xml"
     if not local:
         get_paper_list(repo, date, path)
         if verbose:
@@ -149,7 +149,7 @@ def main(repo, date, domain, local, verbose):
     if verbose:
         print(f"Extracted URLs of domain {domain}.")
     df = pd.DataFrame(pdf_dict)
-    df.to_csv(f"data/extracted_urls_{repo}_{date}_{domain}.csv", index=False)
+    df.to_csv(f"../data/extracted_urls_{repo}_{date}_{domain}.csv", index=False)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

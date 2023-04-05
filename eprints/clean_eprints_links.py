@@ -68,14 +68,14 @@ def clean_by_user(row, column, verbose):
     return repo_id
 
 def main(repo, date, domain, verbose):
-    df = pd.read_csv(f"data/extracted_urls_{repo}_{date}_{domain}.csv")
+    df = pd.read_csv(f"../data/extracted_urls_{repo}_{date}_{domain}.csv")
     df["pattern_cleaned_url"] = df.apply(clean_by_pattern, args=(domain,), axis=1)
     df = df.explode("pattern_cleaned_url", ignore_index=True)  # expand DataFrame for when multiple links are found
     df.drop_duplicates(subset=['title', 'author_for_reference', 'pattern_cleaned_url'], inplace=True)
     if domain == "github.com":
         df["github_user_cleaned_url"] = df.apply(clean_by_user, args=("pattern_cleaned_url", verbose), axis=1)
         df.drop_duplicates(subset=['title', 'author_for_reference', 'github_user_cleaned_url'], inplace=True)
-    df.to_csv(f"data/cleaned_urls_{repo}_{date}_{domain}.csv", index=False)
+    df.to_csv(f"../data/cleaned_urls_{repo}_{date}_{domain}.csv", index=False)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

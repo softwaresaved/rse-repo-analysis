@@ -136,4 +136,4 @@ dmypy.json
 
 # data
 **/data/*
-!eprints/data/representative_set.csv
+!data/representative_set.csv
