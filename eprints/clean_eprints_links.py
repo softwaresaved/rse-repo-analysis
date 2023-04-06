@@ -1,12 +1,10 @@
 import pandas as pd
 import argparse
 import re
-import requests
-from github import Github, GithubException
 import Levenshtein
-import difflib
 import configparser
-import numpy as np
+from github import Github, GithubException
+from unidecode import unidecode
 
 def get_access_token():
     """Read Github API access token from config file.
@@ -31,7 +29,7 @@ def clean_by_pattern(row, domain):
         list<str>: List of cleaned links.
     """
     pattern = rf"{domain}/[A-Za-z0-9-]+/[A-Za-z_\-]+"
-    cleaned = re.findall(pattern, row['url'])
+    cleaned = re.findall(pattern, unidecode(row['url']))
     return cleaned
 
 def clean_by_user(row, column, verbose):
@@ -46,12 +44,15 @@ def clean_by_user(row, column, verbose):
         str: repository identifier (ie. 'user/repo'), may be empty
     """
     g = Github(get_access_token())
-    _, username, repo_name = row[column].split("/")
+    _, username, repo_name = unidecode(row[column]).split("/")
     try:
         repo_id = f"{username}/{repo_name}"
         r = g.get_repo(repo_id)
     except GithubException:
-        user = g.get_user(username)
+        try:
+            user = g.get_user(username)
+        except GithubException:  # user not found
+            return None
         bestmatch = ""
         maxratio = 0.
         for r in user.get_repos():
@@ -64,7 +65,7 @@ def clean_by_user(row, column, verbose):
             if verbose:
                 print(f"Matched user {username}'s repo {bestmatch} with extracted link {row[column]}.")
         else:  # no match found
-            repo_id = ""
+            repo_id = None
     return repo_id
 
 def main(repo, date, domain, verbose):
@@ -72,9 +73,11 @@ def main(repo, date, domain, verbose):
     df["pattern_cleaned_url"] = df.apply(clean_by_pattern, args=(domain,), axis=1)
     df = df.explode("pattern_cleaned_url", ignore_index=True)  # expand DataFrame for when multiple links are found
     df.drop_duplicates(subset=['title', 'author_for_reference', 'pattern_cleaned_url'], inplace=True)
+    df.dropna(axis=0, subset=['pattern_cleaned_url'], inplace=True)
     if domain == "github.com":
         df["github_user_cleaned_url"] = df.apply(clean_by_user, args=("pattern_cleaned_url", verbose), axis=1)
         df.drop_duplicates(subset=['title', 'author_for_reference', 'github_user_cleaned_url'], inplace=True)
+        df.dropna(axis=0, subset=['github_user_cleaned_url'], inplace=True)
     df.to_csv(f"../data/cleaned_urls_{repo}_{date}_{domain}.csv", index=False)
 
 if __name__ == "__main__":

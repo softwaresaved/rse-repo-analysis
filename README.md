@@ -53,6 +53,7 @@ Inside the environment, install the following packages:
   - depends on `pyarrow`
 - [`emoji`](https://carpedm20.github.io/emoji/docs/)
 - `Levenshtein`
+- `unidecode`
 
 #### GitHub API
 
