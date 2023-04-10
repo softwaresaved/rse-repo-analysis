@@ -4,21 +4,42 @@ Study of research software in repositories. Contact: @karacolada
 
 ## About this project
 
-We want to investigate how research software projects have changed over time and differ between disciplines by analysing relevant software repositories.
+We want to investigate how research software projects have changed over time, how they evolve and how they differ between disciplines by analysing relevant software repositories.
 This will help us gain a better understanding of ongoing processes in the research software community and of how they can be supported.
+It will also supply evidence about which practices aid to build and maintain software with a wider community engagement.
 
 We consider multiple approaches to finding relevant software repositories:
 - existing datasets about software mentions in research (e.g. [CZI Software Mentions](https://github.com/chanzuckerberg/software-mentions), [Softcite Dataset](https://github.com/howisonlab/softcite-dataset))
 - crawling publicly available publications for in-text Git(Hub) links (e.g. [ePrints](https://www.eprints.org/uk/))
 
-Potentially interesting data points:
-- licence
-- team size
-- commit frequency
-- linkage to other research outputs
+### Hypothesis
+
+The following is not meant to be a fixed set of things we want to find, but rather some ideas that may help guide what data is worth collecting.
+We hypothesise that
+
+1. research software repositories evolve in four stages
+   1. no engagement: sparse commits, no issues, few authors, no license, no DOI citation
+   2. publication: DOI, license, usage guidelines, some watchers/stars, some issues created and resolved by repository maintainers
+   3. low engagement: external users create issues, maintainers resolve issues, forks
+   4. community engagement: external users create and resolve issues, merge requests
+2. research software repositories that employ good practices reach higher stages (earlier)
+
+### Indicators
+
+This list of indicators is meant for brainstorming. Not all data listed here will be collected in the end.
+
+- Issues: can be queried using GitHub API, naturally show timeline of repository. Interesting first data points might be creation date, creator, resolver, closing date. Interesting future data points might be labels, linked merge requests.
+- Commits: can be queried using GitHub API, naturally show timeline of repository. Rather than the commit contents, we would be more interested in the metadata (author, date) to deduce commit frequency and team dynamics.
+- Content history: we might be able to gather this data from Git commits to a specific file (license, README, contributing). Interesting data points might be the date when it got added, and in case of the README, section titles and when they were updated as well as the presence of a DOI and whether that DOI is CrossRef (paper) or DataCite (dataset, software).
+- Engagement history: Forks, Watchers, Stars. GitHub API will only return info about the current stats, but GitHub Archive or GitTorrent might be a helpful resource.
+
+### Contextual Metadata
+
+To contextualise the result, we should try and record information about the initial publication. This can then be used to find the publication on CrossRef etc. and collect further information such as:
+
+- affiliation
+- mention of developers to the software as authors of the publication
 - topic
-- maintenance time
-- engagement (forks, stars, watchers)
 
 ## Getting started
 
