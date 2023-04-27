@@ -1,12 +1,13 @@
 import argparse
 import configparser
-import re
 import pandas as pd
 import numpy as np
+import os
+import time
 from github import Github
-#from pyspark.sql import SparkSession  # couldn't get this to work, throws AssertionError when pandas_udf are useda
-#from tqdm import tqdm
 from emoji import emoji_count
+from pydriller import Repository
+from itertools import chain
 
 def get_access_token():
     config = configparser.ConfigParser()
@@ -18,8 +19,8 @@ def query_issues(repo_link: str, g: Github):
     try:
         repo = g.get_repo(repo_link)
     except:
-        print(f"Could not resolve repository for URL {repo_link}.")
-        return None
+        print(f"query_issues: Could not resolve repository for URL {repo_link}.")
+        return np.array([[repo_link, None, None, None, None, None]])
     issues_paged = repo.get_issues(state='all')
     if issues_paged.totalCount == 0:
         issues.append([repo_link, None, None, None, None, None])
@@ -33,8 +34,8 @@ def query_contributions(repo_link: str, g: Github):
     try:
         repo = g.get_repo(repo_link)
     except:
-        print(f"Could not resolve repository for URL {repo_link}.")
-        return None
+        print(f"query_contributions: Could not resolve repository for URL {repo_link}.")
+        return np.array([[repo_link, None, None, None, None]])
     contribution_stats = repo.get_stats_contributors()
     if contribution_stats is not None:
         for s in contribution_stats:
@@ -45,13 +46,38 @@ def query_contributions(repo_link: str, g: Github):
     contributions = np.array(contributions)
     return contributions
 
+def query_readme_history(row):
+    repo_link = row['repo_link']
+    readme_path = row['readme_path']
+    if not readme_path.endswith('md'):
+        return None
+    repo_readme = Repository('https://github.com/'+repo_link, filepath=readme_path)
+    headings = []
+    for commit in repo_readme.traverse_commits():
+        try:
+            for f in commit.modified_files:
+                if f.new_path == readme_path:
+                    added = []
+                    deleted = []
+                    for _, line in f.diff_parsed['added']:
+                        if line.startswith('#'):
+                            added.append(line.lstrip('# '))
+                    for _, line in f.diff_parsed['deleted']:
+                        if line.startswith('#'):
+                            deleted.append(line.lstrip('# '))
+            if len(added) > 0 or len(deleted) > 0:
+                headings.append([repo_link, commit.author_date, added, deleted])
+        except ValueError:  # can be raised by git on missing commits somehow
+            pass
+    return headings
+
 def query_contents(repo_link: str, g: Github):
     contents = []
     try:
         repo = g.get_repo(repo_link)
     except:
-        print(f"Could not resolve repository for URL {repo_link}.")
-        return None
+        print(f"query_contents: Could not resolve repository for URL {repo_link}.")
+        return np.array([[repo_link, None, 0, None, 0, 0]])
     try:  # LICENSE
         license_file = repo.get_license()
         license_entry = license_file.license.key
@@ -59,33 +85,39 @@ def query_contents(repo_link: str, g: Github):
         license_entry = None
     try:  # README.md
         readme = repo.get_readme()
-        readme_entry = readme.size
+        readme_size = readme.size
         readme_content = readme.decoded_content.decode()
-        pattern = r"#+ .*\n"
-        headings = re.findall(pattern, readme_content)
-        cleaned_headings = []
-        for h in headings:
-            cleaned_headings.append(h.strip("# \n"))
         readme_emojis = emoji_count(readme_content)
+        readme_path = readme.path
     except:
-        readme_entry = 0
-        cleaned_headings = [None]
+        readme_size = 0
         readme_emojis = 0
+        readme_path = None
     try:  # CONTRIBUTING
         contrib_file_size = repo.get_contents("CONTRIBUTING.md").size
     except:
         contrib_file_size = 0
-    for h in cleaned_headings:
-        contents.append([repo_link, license_entry, readme_entry, h, readme_emojis, contrib_file_size])
+    contents.append([repo_link, license_entry, readme_size, readme_path, readme_emojis, contrib_file_size])
     contents = np.array(contents)
     return contents
 
-def crawl_repos(df, name):
+def collect(series, func, column_names, drop_names, path):
+    g = Github(get_access_token())
+    data = series.apply(func, args=(g,))
+    data_arr = np.concatenate(data.tolist())
+    df = pd.DataFrame(data_arr, columns=column_names)
+    if len(drop_names) > 0:
+        df.dropna(axis=0, how='all', subset=drop_names, inplace=True)
+    df.to_csv(path)
+
+def crawl_repos(df, name, target_folder, verbose):
     """For each repository, retrieve contributions, contents.
 
     Args:
         df (pd.DataFrame): dataset containing GitHub repository identifiers
         name (str): name of column containing the identifiers
+        target_folder (str): path to folder to store CSV data in
+        verbose (bool): toggles verbose output
 
     Returns:
         (pd.DataFrame, pd.DataFrame): one data frame holding info on contributions, one data frame holding info on licenses.
@@ -103,29 +135,49 @@ def crawl_repos(df, name):
                 - contributing_size: size of CONTRIBUTING.md file, 0 if none was found
     """
     repo_links = df[name]
-    contributions = repo_links.apply(query_contributions, args=(Github(get_access_token()),))
-    contents = repo_links.apply(query_contents, args=(Github(get_access_token()),))
-    issues = repo_links.apply(query_issues, args=(Github(get_access_token()),))
-    contributions = np.concatenate(contributions.tolist())
-    contents = np.concatenate(contents.tolist())
-    issues = np.concatenate(issues.tolist())
-    contributions_df = pd.DataFrame(contributions, columns=['repo_link', 'author', 'year', 'week', 'commits'])
-    contributions_df.dropna(axis=0, how='all', subset=['author', 'year', 'week', 'commits'], inplace=True)
-    contents_df = pd.DataFrame(contents, columns=['repo_link', 'license', 'readme_size', 'readme_headings', 'readme_emojis', 'contributing_size'])
-    issues_df = pd.DataFrame(issues, columns=['repo_link', 'state', 'created_at', 'user', 'closed_at', 'closed_by'])
-    issues_df.dropna(axis=0, how='all', subset=['state'], inplace=True)
-    return contributions_df, contents_df, issues_df
+    if verbose:
+        print("Querying contributions...")
+        start = time.time()
+    collect(repo_links, query_contributions,
+            ['repo_link', 'author', 'year', 'week', 'commits'],
+            ['author', 'year', 'week', 'commits'],
+            os.path.join(target_folder, 'contributions.csv'))
+    if verbose:
+        end = time.time()
+        print(f"Done - {end-start:.2f} seconds.")
+        print("Querying contents...")
+        start = time.time()
+    collect(repo_links, query_contents, 
+            ['repo_link', 'license', 'readme_size', 'readme_path', 'readme_emojis', 'contributing_size'],
+            [],
+            os.path.join(target_folder, 'contents.csv'))
+    if verbose:
+        end = time.time()
+        print(f"Done - {end-start:.2f} seconds.")
+        print("Querying readme history...")
+        start = time.time()
+    contents_df = pd.read_csv(os.path.join(target_folder, 'contents.csv'))
+    rm_history = contents_df[['repo_link', 'readme_path']].apply(query_readme_history, axis=1)
+    rm_history_concatenated = list(chain.from_iterable(rm_history.tolist()))
+    rm_history_df = pd.DataFrame(rm_history_concatenated, columns=['repo_link', 'author_date', 'added', 'deleted'])
+    rm_history_df.to_csv(os.path.join(target_folder, 'readme_history.csv'))
+    if verbose:
+        end = time.time()
+        print(f"Done - {end-start:.2f} seconds.")
+        print("Querying issues...")
+        start = time.time()
+    collect(repo_links, query_issues,
+            ['repo_link', 'state', 'created_at', 'user', 'closed_at', 'closed_by'],
+            ['state'],
+            os.path.join(target_folder, 'issues.csv'))
+    if verbose:
+        end = time.time()
+        print(f"Done - {end-start:.2f} seconds.")
 
 def main(path, name, verbose):
-    #spark = SparkSession.builder.getOrCreate()
-    #df = spark.read.csv(path, header=True)
     df = pd.read_csv(path)
-    #df = df.withColumn("output", graze_repo("user_name", "repo_name"))
-    #df.select(combine("user_name", "repo_name")).show()
-    contributions_df, contents_df, issues_df = crawl_repos(df, name)
-    contributions_df.to_csv(f'data/contributions.csv')
-    contents_df.to_csv(f'data/contents.csv')
-    issues_df.to_csv(f'data/issues.csv')
+    target_folder = '../data'
+    crawl_repos(df, name, target_folder, verbose)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
