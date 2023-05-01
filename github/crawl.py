@@ -205,6 +205,24 @@ def crawl_repos(df, name, target_folder, verbose):
     if verbose:
         end = time.time()
         print(f"Done - {end-start:.2f} seconds.")
+        print("Querying stargazers...")
+        start = time.time()
+    collect(repo_links, query_stars, 
+            ['repo_link', 'date', 'user'],
+            [],
+            os.path.join(target_folder, 'stars.csv'))
+    if verbose:
+        end = time.time()
+        print(f"Done - {end-start:.2f} seconds.")
+        print("Querying forks...")
+        start = time.time()
+    collect(repo_links, query_forks, 
+        ['repo_link', 'date', 'user'],
+        [],
+        os.path.join(target_folder, 'forks.csv'))
+    if verbose:
+        end = time.time()
+        print(f"Done - {end-start:.2f} seconds.")
         print("Querying issues...")
         start = time.time()
     collect(repo_links, query_issues,
