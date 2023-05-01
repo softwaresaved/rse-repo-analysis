@@ -112,6 +112,36 @@ def query_contents(repo_link: str, g: Github):
     contents = np.array(contents)
     return contents
 
+def query_stars(repo_link: str, g: Github):
+    stars = []
+    try:
+        repo = g.get_repo(repo_link)
+    except:
+        print(f"query_stars: Could not resolve repository for URL {repo_link}.")
+        return np.array([[repo_link, None, None]])
+    stargazers = repo.get_stargazers_with_dates()
+    for sg in stargazers:
+        stars.append(sg.starred_at, sg.user.login)
+    if len(stars) == 0:  # unsure if this is needed
+        stars.append([repo_link, None, None])
+    stars = np.array(stars)
+    return stars
+
+def query_forks(repo_link: str, g: Github):
+    forks = []
+    try:
+        repo = g.get_repo(repo_link)
+    except:
+        print(f"query_forks: Could not resolve repository for URL {repo_link}.")
+        return np.array([[repo_link, None, None]])
+    forks_list = repo.get_forks()
+    for f in forks_list:
+        forks.append([repo_link, f.created_at, f.owner.login])
+    if len(forks) == 0:  # unsure if this is needed
+        forks.append([repo_link, None, None])
+    forks = np.array(forks)
+    return forks
+
 def collect(series, func, column_names, drop_names, path):
     g = Github(get_access_token())
     data = series.apply(func, args=(g,))
