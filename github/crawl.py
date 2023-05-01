@@ -102,7 +102,13 @@ def query_contents(repo_link: str, g: Github):
         contrib_file_size = repo.get_contents("CONTRIBUTING.md").size
     except:
         contrib_file_size = 0
-    contents.append([repo_link, license_entry, readme_size, readme_path, readme_emojis, contrib_file_size])
+    repo_citation = Repository('https://github.com/'+repo_link, filepath="CITATION.cff")
+    commits_iterator = repo_citation.traverse_commits()
+    try:
+        citation_added = next(commits_iterator).author_date
+    except StopIteration:
+        citation_added = None
+    contents.append([repo_link, license_entry, readme_size, readme_path, readme_emojis, contrib_file_size, citation_added])
     contents = np.array(contents)
     return contents
 
@@ -153,7 +159,7 @@ def crawl_repos(df, name, target_folder, verbose):
         print("Querying contents...")
         start = time.time()
     collect(repo_links, query_contents, 
-            ['repo_link', 'license', 'readme_size', 'readme_path', 'readme_emojis', 'contributing_size'],
+            ['repo_link', 'license', 'readme_size', 'readme_path', 'readme_emojis', 'contributing_size', 'citation_added'],
             [],
             os.path.join(target_folder, 'contents.csv'))
     if verbose:
