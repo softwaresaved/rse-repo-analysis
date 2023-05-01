@@ -52,24 +52,29 @@ def query_readme_history(row):
     if not readme_path.endswith('md'):
         return None
     repo_readme = Repository('https://github.com/'+repo_link, filepath=readme_path)
-    headings = []
+    history = []
     for commit in repo_readme.traverse_commits():
         try:
             for f in commit.modified_files:
                 if f.new_path == readme_path:
-                    added = []
-                    deleted = []
+                    added_headings = []
+                    deleted_headings = []
+                    added_cites = []
                     for _, line in f.diff_parsed['added']:
                         if line.startswith('#'):
-                            added.append(line.lstrip('# '))
+                            added_headings.append(line.lstrip('# '))
+                        else:
+                            for indicator in ["DOI:", "doi.", "@article", "@misc"]:
+                                if indicator in line :
+                                    added_cites.append(line)
                     for _, line in f.diff_parsed['deleted']:
                         if line.startswith('#'):
-                            deleted.append(line.lstrip('# '))
-            if len(added) > 0 or len(deleted) > 0:
-                headings.append([repo_link, commit.author_date, added, deleted])
+                            deleted_headings.append(line.lstrip('# '))
+            if len(added_headings) > 0 or len(deleted_headings) > 0 or len(added_cites) > 0:
+                history.append([repo_link, commit.author_date, added_headings, deleted_headings, added_cites])
         except ValueError:  # can be raised by git on missing commits somehow
             pass
-    return headings
+    return history
 
 def query_contents(repo_link: str, g: Github):
     contents = []
@@ -159,7 +164,7 @@ def crawl_repos(df, name, target_folder, verbose):
     contents_df = pd.read_csv(os.path.join(target_folder, 'contents.csv'))
     rm_history = contents_df[['repo_link', 'readme_path']].apply(query_readme_history, axis=1)
     rm_history_concatenated = list(chain.from_iterable(rm_history.tolist()))
-    rm_history_df = pd.DataFrame(rm_history_concatenated, columns=['repo_link', 'author_date', 'added', 'deleted'])
+    rm_history_df = pd.DataFrame(rm_history_concatenated, columns=['repo_link', 'author_date', 'added_headings', 'deleted_headings', 'added_cites'])
     rm_history_df.to_csv(os.path.join(target_folder, 'readme_history.csv'))
     if verbose:
         end = time.time()
