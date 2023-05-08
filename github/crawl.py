@@ -4,55 +4,73 @@ import pandas as pd
 import numpy as np
 import os
 import time
+import traceback
 from github import Github
 from emoji import emoji_count
 from pydriller import Repository
 from itertools import chain
+
+def wrap_query(f):
+    def wrapper(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except:
+            msg = traceback.format_exc()
+            print(f"[WARNING] Executing {f.__name__} with arguments {args} failed:\n{msg}")
+    return wrapper
 
 def get_access_token():
     config = configparser.ConfigParser()
     config.read('../config.cfg')
     return config['ACCESS']['token']
 
-def query_issues(repo_link: str, g: Github):
-    issues = []
+@wrap_query
+def query_issues(row: pd.Series, id_key: str, g: Github):
+    issues = {k: [] for k in ['state', 'created_at', 'user', 'closed_at', 'closed_by']}
     try:
-        repo = g.get_repo(repo_link)
+        repo = g.get_repo(row[id_key])
     except:
-        print(f"query_issues: Could not resolve repository for URL {repo_link}.")
-        return np.array([[repo_link, None, None, None, None, None]])
+        print(f"query_issues: Could not resolve repository for URL {row[id_key]}.")
+        return None
     issues_paged = repo.get_issues(state='all')
-    if issues_paged.totalCount == 0:
-        issues.append([repo_link, None, None, None, None, None])
     for i in issues_paged:
-        issues.append([repo_link, i.state, i.created_at, i.user.login, i.closed_at, i.closed_by])
-    issues = np.array(issues)
-    return issues
+        issues['state'].append(i.state)
+        issues['created_at'].append(i.created_at)
+        issues['user'].append(i.user.login)
+        issues['closed_at'].append(i.closed_at)
+        issues['closed_by'].append(i.closed_by)
+    for k, v in issues.items():
+        row[k] = v
+    return row
 
-def query_contributions(repo_link: str, g: Github):
-    contributions = []
+@wrap_query
+def query_contributions(row: pd.Series, id_key: str, g: Github):
+    contributions = {k: [] for k in ['author', 'year', 'week', 'commits']}
     try:
-        repo = g.get_repo(repo_link)
+        repo = g.get_repo(row[id_key])
     except:
-        print(f"query_contributions: Could not resolve repository for URL {repo_link}.")
-        return np.array([[repo_link, None, None, None, None]])
+        print(f"query_contributions: Could not resolve repository for URL {row[id_key]}.")
+        return None
     contribution_stats = repo.get_stats_contributors()
     if contribution_stats is not None:
         for s in contribution_stats:
             for w in s.weeks:
-                contributions.append([repo_link, s.author.login, w.w.year, w.w.isocalendar().week, w.c])
-    else:
-        contributions.append([repo_link, None, None, None, None])
-    contributions = np.array(contributions)
-    return contributions
+                contributions['author'].append(s.author.login)
+                contributions['year'].append(w.w.year)
+                contributions['week'].append(w.w.isocalendar().week)
+                contributions['commits'].append(w.c)
+    for k, v in contributions.items():
+        row[k] = v
+    return row
 
-def query_readme_history(row):
-    repo_link = row['repo_link']
+@wrap_query
+def query_readme_history(row: pd.Series, id_key: str, *args, **kwargs):
+    repo_link = row[id_key]
     readme_path = row['readme_path']
     if not readme_path.endswith('md'):
         return None
     repo_readme = Repository('https://github.com/'+repo_link, filepath=readme_path)
-    history = []
+    history = {k: [] for k in ['author_date', 'added_headings', 'deleted_headings', 'added_cites']}
     for commit in repo_readme.traverse_commits():
         try:
             for f in commit.modified_files:
@@ -71,116 +89,110 @@ def query_readme_history(row):
                         if line.startswith('#'):
                             deleted_headings.append(line.lstrip('# '))
             if len(added_headings) > 0 or len(deleted_headings) > 0 or len(added_cites) > 0:
-                history.append([repo_link, commit.author_date, added_headings, deleted_headings, added_cites])
+                history['author_date'].append(commit.author_date)
+                history['added_headings'].append(added_headings)
+                history['deleted_headings'].append(deleted_headings)
+                history['added_cites'].append(added_cites)
         except ValueError:  # can be raised by git on missing commits somehow
             pass
-    return history
+    for k, v in history.items():
+        row[k] = v
+    return row
 
-def query_contents(repo_link: str, g: Github):
-    contents = []
+@wrap_query
+def query_contents(row: pd.Series, id_key: str, g: Github):
+    contents = {k: [] for k in ['license', 'readme_size', 'readme_path', 'readme_emojis', 'contributing_size', 'citation_added']}
     try:
-        repo = g.get_repo(repo_link)
+        repo = g.get_repo(row[id_key])
     except:
-        print(f"query_contents: Could not resolve repository for URL {repo_link}.")
-        return np.array([[repo_link, None, 0, None, 0, 0]])
+        print(f"query_contents: Could not resolve repository for URL {row[id_key]}.")
+        return None
     try:  # LICENSE
         license_file = repo.get_license()
-        license_entry = license_file.license.key
+        contents['license'].append(license_file.license.key)
     except:
-        license_entry = None
+        contents['license'].append(None)
     try:  # README.md
         readme = repo.get_readme()
-        readme_size = readme.size
+        contents['readme_size'].append(readme.size)
         readme_content = readme.decoded_content.decode()
-        readme_emojis = emoji_count(readme_content)
-        readme_path = readme.path
+        contents['readme_emojis'].append(emoji_count(readme_content))
+        contents['readme_path'].append(readme.path)
     except:
-        readme_size = 0
-        readme_emojis = 0
-        readme_path = None
+        contents['readme_size'].append(0)
+        contents['readme_emojis'].append(0)
+        contents['readme_path'].append(None)
     try:  # CONTRIBUTING
-        contrib_file_size = repo.get_contents("CONTRIBUTING.md").size
+        contents['contributing_size'].append(repo.get_contents("CONTRIBUTING.md").size)
     except:
-        contrib_file_size = 0
-    repo_citation = Repository('https://github.com/'+repo_link, filepath="CITATION.cff")
+        contents['contributing_size'].append(0)
+    repo_citation = Repository('https://github.com/'+row[id_key], filepath="CITATION.cff")
     commits_iterator = repo_citation.traverse_commits()
     try:
-        citation_added = next(commits_iterator).author_date
+        contents['citation_added'].append(next(commits_iterator).author_date)
     except StopIteration:
-        citation_added = None
-    contents.append([repo_link, license_entry, readme_size, readme_path, readme_emojis, contrib_file_size, citation_added])
-    contents = np.array(contents)
-    return contents
+        contents['citation_added'].append(None)
+    for k, v in contents.items():
+        row[k] = v
+    return row
 
-def query_stars(repo_link: str, g: Github):
-    stars = []
+@wrap_query
+def query_stars(row: pd.Series, id_key: str, g: Github):
+    stars = {k: [] for k in  ['date', 'user']}
     try:
-        repo = g.get_repo(repo_link)
+        repo = g.get_repo(row[id_key])
     except:
-        print(f"query_stars: Could not resolve repository for URL {repo_link}.")
-        return np.array([[repo_link, None, None]])
+        print(f"query_stars: Could not resolve repository for URL {row[id_key]}.")
+        return None
     stargazers = repo.get_stargazers_with_dates()
     for sg in stargazers:
-        stars.append(sg.starred_at, sg.user.login)
-    if len(stars) == 0:  # unsure if this is needed
-        stars.append([repo_link, None, None])
-    stars = np.array(stars)
-    return stars
+        stars['date'].append(sg.starred_at)
+        stars['user'].append(sg.user.login)
+    for k, v in stars.items():
+        row[k] = v
+    return row
 
-def query_forks(repo_link: str, g: Github):
-    forks = []
+@wrap_query
+def query_forks(row: pd.Series, id_key: str, g: Github):
+    forks = {k: [] for k in ['date', 'user']}
     try:
-        repo = g.get_repo(repo_link)
+        repo = g.get_repo(row[id_key])
     except:
-        print(f"query_forks: Could not resolve repository for URL {repo_link}.")
-        return np.array([[repo_link, None, None]])
+        print(f"query_forks: Could not resolve repository for URL {row[id_key]}.")
+        return None
     forks_list = repo.get_forks()
     for f in forks_list:
-        forks.append([repo_link, f.created_at, f.owner.login])
-    if len(forks) == 0:  # unsure if this is needed
-        forks.append([repo_link, None, None])
-    forks = np.array(forks)
-    return forks
+        forks['date'].append(f.created_at)
+        forks['user'].append(f.owner.login)
+    for k, v in forks.items():
+        row[k] = v
+    return row
 
-def collect(series, func, column_names, drop_names, path):
+def collect(df, name, func, drop_names, path):
     g = Github(get_access_token())
-    data = series.apply(func, args=(g,))
-    data_arr = np.concatenate(data.tolist())
-    df = pd.DataFrame(data_arr, columns=column_names)
+    d = df.apply(func, axis=1, args=(name, g))
+    cols = list(d.columns)
+    cols_to_ignore = list(df.columns)
+    cols_to_explode = [c for c in cols if not c in cols_to_ignore]
+    d = d.dropna().explode(cols_to_explode)
     if len(drop_names) > 0:
-        df.dropna(axis=0, how='all', subset=drop_names, inplace=True)
-    df.to_csv(path)
+        d.dropna(axis=0, how='all', subset=drop_names, inplace=True)
+    d.to_csv(path)
 
 def crawl_repos(df, name, target_folder, verbose):
-    """For each repository, retrieve contributions, contents.
+    """For each repository, retrieve contributions, contents, readme info, stars, forks and issues. All stored as CSV.
 
     Args:
         df (pd.DataFrame): dataset containing GitHub repository identifiers
         name (str): name of column containing the identifiers
         target_folder (str): path to folder to store CSV data in
         verbose (bool): toggles verbose output
-
-    Returns:
-        (pd.DataFrame, pd.DataFrame): one data frame holding info on contributions, one data frame holding info on licenses.
-            - contributions dataframe columns:
-                - repo_link: GitHub ID from original data frame
-                - author: contributor to repository
-                - year, week: determine the week of contributions in question
-                - commits: number of commits in that specific week
-            - contents dataframe columns:
-                - repo_link: GitHub ID from original data frame
-                - license: license key if license was found (e.g. mit, lgpl-3.0, mpl-2.0, ... (https://docs.github.com/en/rest/licenses?apiVersion=2022-11-28#get-all-commonly-used-licenses))
-                - readme_size: size of README file, 0 if none was found
-                - readme_headings: headings found in README files
-                - readme_emojis: number of emojis found in README file
-                - contributing_size: size of CONTRIBUTING.md file, 0 if none was found
     """
-    repo_links = df[name]
+    repo_links = df[[name]]
     if verbose:
         print("Querying contributions...")
         start = time.time()
-    collect(repo_links, query_contributions,
-            ['repo_link', 'author', 'year', 'week', 'commits'],
+    collect(repo_links, name, query_contributions,
             ['author', 'year', 'week', 'commits'],
             os.path.join(target_folder, 'contributions.csv'))
     if verbose:
@@ -188,8 +200,7 @@ def crawl_repos(df, name, target_folder, verbose):
         print(f"Done - {end-start:.2f} seconds.")
         print("Querying contents...")
         start = time.time()
-    collect(repo_links, query_contents, 
-            ['repo_link', 'license', 'readme_size', 'readme_path', 'readme_emojis', 'contributing_size', 'citation_added'],
+    collect(repo_links, name, query_contents, 
             [],
             os.path.join(target_folder, 'contents.csv'))
     if verbose:
@@ -198,17 +209,15 @@ def crawl_repos(df, name, target_folder, verbose):
         print("Querying readme history...")
         start = time.time()
     contents_df = pd.read_csv(os.path.join(target_folder, 'contents.csv'))
-    rm_history = contents_df[['repo_link', 'readme_path']].apply(query_readme_history, axis=1)
-    rm_history_concatenated = list(chain.from_iterable(rm_history.tolist()))
-    rm_history_df = pd.DataFrame(rm_history_concatenated, columns=['repo_link', 'author_date', 'added_headings', 'deleted_headings', 'added_cites'])
-    rm_history_df.to_csv(os.path.join(target_folder, 'readme_history.csv'))
+    collect(contents_df[[name, 'readme_path']], name, query_readme_history,
+            [],
+            os.path.join(target_folder, 'readme_history.csv'))
     if verbose:
         end = time.time()
         print(f"Done - {end-start:.2f} seconds.")
         print("Querying stargazers...")
         start = time.time()
-    collect(repo_links, query_stars, 
-            ['repo_link', 'date', 'user'],
+    collect(repo_links, name, query_stars, 
             [],
             os.path.join(target_folder, 'stars.csv'))
     if verbose:
@@ -216,8 +225,7 @@ def crawl_repos(df, name, target_folder, verbose):
         print(f"Done - {end-start:.2f} seconds.")
         print("Querying forks...")
         start = time.time()
-    collect(repo_links, query_forks, 
-        ['repo_link', 'date', 'user'],
+    collect(repo_links, name, query_forks, 
         [],
         os.path.join(target_folder, 'forks.csv'))
     if verbose:
@@ -225,8 +233,7 @@ def crawl_repos(df, name, target_folder, verbose):
         print(f"Done - {end-start:.2f} seconds.")
         print("Querying issues...")
         start = time.time()
-    collect(repo_links, query_issues,
-            ['repo_link', 'state', 'created_at', 'user', 'closed_at', 'closed_by'],
+    collect(repo_links, name, query_issues,
             ['state'],
             os.path.join(target_folder, 'issues.csv'))
     if verbose:
