@@ -6,9 +6,11 @@ import os
 import time
 import traceback
 from github import Github
+from github.GithubException import RateLimitExceededException, UnknownObjectException
 from emoji import emoji_count
 from pydriller import Repository
-from itertools import chain
+from datetime import datetime, timezone
+from time import sleep
 
 def wrap_query(f):
     def wrapper(*args, **kwargs):
@@ -19,6 +21,23 @@ def wrap_query(f):
             print(f"[WARNING] Executing {f.__name__} with arguments {args} failed:\n{msg}")
     return wrapper
 
+def catch_rate_limit(g):
+    reset = g.get_rate_limit().core.reset.replace(tzinfo=timezone.utc)
+    now = datetime.now(tz=timezone.utc)
+    delta = reset - now
+    sleep(delta.seconds+5)
+
+def safe_load_repo(g, link, func_name):
+    repo = None
+    try:
+        repo = g.get_repo(link)
+    except UnknownObjectException:
+        print(f"{func_name}: Could not resolve repository for URL {link}.")
+    except RateLimitExceededException:
+        catch_rate_limit(g)
+        repo = g.get_repo(link)  # retry
+    return repo
+
 def get_access_token():
     config = configparser.ConfigParser()
     config.read('../config.cfg')
@@ -27,18 +46,23 @@ def get_access_token():
 @wrap_query
 def query_issues(row: pd.Series, id_key: str, g: Github):
     issues = {k: [] for k in ['state', 'created_at', 'user', 'closed_at', 'closed_by']}
-    try:
-        repo = g.get_repo(row[id_key])
-    except:
-        print(f"query_issues: Could not resolve repository for URL {row[id_key]}.")
+    repo = safe_load_repo(g, row[id_key], "query_issues")
+    if repo is None:
         return None
-    issues_paged = repo.get_issues(state='all')
-    for i in issues_paged:
-        issues['state'].append(i.state)
-        issues['created_at'].append(i.created_at)
-        issues['user'].append(i.user.login)
-        issues['closed_at'].append(i.closed_at)
-        issues['closed_by'].append(i.closed_by)
+    for tries in range(2):
+        try:
+            issues_paged = repo.get_issues(state='all')
+            for i in issues_paged:
+                issues['state'].append(i.state)
+                issues['created_at'].append(i.created_at)
+                issues['user'].append(i.user.login)
+                issues['closed_at'].append(i.closed_at)
+                issues['closed_by'].append(i.closed_by)
+        except RateLimitExceededException:
+            if tries == 0:
+                catch_rate_limit(g)
+            else:
+                raise
     for k, v in issues.items():
         row[k] = v
     return row
@@ -46,19 +70,24 @@ def query_issues(row: pd.Series, id_key: str, g: Github):
 @wrap_query
 def query_contributions(row: pd.Series, id_key: str, g: Github):
     contributions = {k: [] for k in ['author', 'year', 'week', 'commits']}
-    try:
-        repo = g.get_repo(row[id_key])
-    except:
-        print(f"query_contributions: Could not resolve repository for URL {row[id_key]}.")
+    repo = safe_load_repo(g, row[id_key], "query_contributions")
+    if repo is None:
         return None
-    contribution_stats = repo.get_stats_contributors()
-    if contribution_stats is not None:
-        for s in contribution_stats:
-            for w in s.weeks:
-                contributions['author'].append(s.author.login)
-                contributions['year'].append(w.w.year)
-                contributions['week'].append(w.w.isocalendar().week)
-                contributions['commits'].append(w.c)
+    for tries in range(2):
+        try:
+            contribution_stats = repo.get_stats_contributors()
+            if contribution_stats is not None:
+                for s in contribution_stats:
+                    for w in s.weeks:
+                        contributions['author'].append(s.author.login)
+                        contributions['year'].append(w.w.year)
+                        contributions['week'].append(w.w.isocalendar().week)
+                        contributions['commits'].append(w.c)
+        except RateLimitExceededException:
+            if tries == 0:
+                catch_rate_limit(g)
+            else:
+                raise
     for k, v in contributions.items():
         row[k] = v
     return row
@@ -104,30 +133,36 @@ def query_readme_history(row: pd.Series, id_key: str, *args, **kwargs):
 @wrap_query
 def query_contents(row: pd.Series, id_key: str, g: Github):
     contents = {k: [] for k in ['license', 'readme_size', 'readme_path', 'readme_emojis', 'contributing_size', 'citation_added']}
-    try:
-        repo = g.get_repo(row[id_key])
-    except:
-        print(f"query_contents: Could not resolve repository for URL {row[id_key]}.")
+    repo = safe_load_repo(g, row[id_key], "query_contents")
+    if repo is None:
         return None
-    try:  # LICENSE
-        license_file = repo.get_license()
-        contents['license'].append(license_file.license.key)
-    except:
-        contents['license'].append(None)
-    try:  # README.md
-        readme = repo.get_readme()
-        contents['readme_size'].append(readme.size)
-        readme_content = readme.decoded_content.decode()
-        contents['readme_emojis'].append(emoji_count(readme_content))
-        contents['readme_path'].append(readme.path)
-    except:
-        contents['readme_size'].append(0)
-        contents['readme_emojis'].append(0)
-        contents['readme_path'].append(None)
-    try:  # CONTRIBUTING
-        contents['contributing_size'].append(repo.get_contents("CONTRIBUTING.md").size)
-    except:
-        contents['contributing_size'].append(0)
+    for tries in range(2):  # allow retry
+        try:
+            try:  # LICENSE
+                license_file = repo.get_license()
+                contents['license'].append(license_file.license.key)
+            except UnknownObjectException:
+                contents['license'].append(None)
+            try:  # README.md
+                readme = repo.get_readme()
+                contents['readme_size'].append(readme.size)
+                readme_content = readme.decoded_content.decode()
+                contents['readme_emojis'].append(emoji_count(readme_content))
+                contents['readme_path'].append(readme.path)
+            except UnknownObjectException:
+                contents['readme_size'].append(0)
+                contents['readme_emojis'].append(0)
+                contents['readme_path'].append(None)
+            try:  # CONTRIBUTING
+                contents['contributing_size'].append(repo.get_contents("CONTRIBUTING.md").size)
+            except UnknownObjectException:
+                contents['contributing_size'].append(0)
+        except RateLimitExceededException:
+            if tries == 0:
+                catch_rate_limit(g)
+            else:
+                raise
+        break  # break early if no rate limit problem
     repo_citation = Repository('https://github.com/'+row[id_key], filepath="CITATION.cff")
     commits_iterator = repo_citation.traverse_commits()
     try:
@@ -141,15 +176,20 @@ def query_contents(row: pd.Series, id_key: str, g: Github):
 @wrap_query
 def query_stars(row: pd.Series, id_key: str, g: Github):
     stars = {k: [] for k in  ['date', 'user']}
-    try:
-        repo = g.get_repo(row[id_key])
-    except:
-        print(f"query_stars: Could not resolve repository for URL {row[id_key]}.")
+    repo = safe_load_repo(g, row[id_key], "query_stars")
+    if repo is None:
         return None
-    stargazers = repo.get_stargazers_with_dates()
-    for sg in stargazers:
-        stars['date'].append(sg.starred_at)
-        stars['user'].append(sg.user.login)
+    for tries in range(2):
+        try:
+            stargazers = repo.get_stargazers_with_dates()
+            for sg in stargazers:
+                stars['date'].append(sg.starred_at)
+                stars['user'].append(sg.user.login)
+        except RateLimitExceededException:
+            if tries == 0:
+                catch_rate_limit(g)
+            else:
+                raise
     for k, v in stars.items():
         row[k] = v
     return row
@@ -157,21 +197,25 @@ def query_stars(row: pd.Series, id_key: str, g: Github):
 @wrap_query
 def query_forks(row: pd.Series, id_key: str, g: Github):
     forks = {k: [] for k in ['date', 'user']}
-    try:
-        repo = g.get_repo(row[id_key])
-    except:
-        print(f"query_forks: Could not resolve repository for URL {row[id_key]}.")
+    repo = safe_load_repo(g, row[id_key], "query_forks")
+    if repo is None:
         return None
-    forks_list = repo.get_forks()
-    for f in forks_list:
-        forks['date'].append(f.created_at)
-        forks['user'].append(f.owner.login)
+    for tries in range(2):
+        try:
+            forks_list = repo.get_forks()
+            for f in forks_list:
+                forks['date'].append(f.created_at)
+                forks['user'].append(f.owner.login)
+        except RateLimitExceededException:
+            if tries == 0:
+                catch_rate_limit(g)
+            else:
+                raise
     for k, v in forks.items():
         row[k] = v
     return row
 
-def collect(df, name, func, drop_names, path):
-    g = Github(get_access_token())
+def collect(g, df, name, func, drop_names, path):
     d = df.apply(func, axis=1, args=(name, g))
     cols = list(d.columns)
     cols_to_ignore = list(df.columns)
@@ -191,10 +235,11 @@ def crawl_repos(df, name, target_folder, verbose):
         verbose (bool): toggles verbose output
     """
     repo_links = df[[name]]
+    g = Github(get_access_token())
     if verbose:
         print("Querying contributions...")
         start = time.time()
-    collect(repo_links, name, query_contributions,
+    collect(g, repo_links, name, query_contributions,
             ['author', 'year', 'week', 'commits'],
             os.path.join(target_folder, 'contributions.csv'))
     if verbose:
@@ -202,7 +247,7 @@ def crawl_repos(df, name, target_folder, verbose):
         print(f"Done - {end-start:.2f} seconds.")
         print("Querying contents...")
         start = time.time()
-    collect(repo_links, name, query_contents, 
+    collect(g, repo_links, name, query_contents, 
             [],
             os.path.join(target_folder, 'contents.csv'))
     if verbose:
@@ -211,7 +256,7 @@ def crawl_repos(df, name, target_folder, verbose):
         print("Querying readme history...")
         start = time.time()
     contents_df = pd.read_csv(os.path.join(target_folder, 'contents.csv'))
-    collect(contents_df[[name, 'readme_path']], name, query_readme_history,
+    collect(g, contents_df[[name, 'readme_path']], name, query_readme_history,
             [],
             os.path.join(target_folder, 'readme_history.csv'))
     if verbose:
@@ -219,7 +264,7 @@ def crawl_repos(df, name, target_folder, verbose):
         print(f"Done - {end-start:.2f} seconds.")
         print("Querying stargazers...")
         start = time.time()
-    collect(repo_links, name, query_stars, 
+    collect(g, repo_links, name, query_stars, 
             [],
             os.path.join(target_folder, 'stars.csv'))
     if verbose:
@@ -227,7 +272,7 @@ def crawl_repos(df, name, target_folder, verbose):
         print(f"Done - {end-start:.2f} seconds.")
         print("Querying forks...")
         start = time.time()
-    collect(repo_links, name, query_forks, 
+    collect(g, repo_links, name, query_forks, 
         [],
         os.path.join(target_folder, 'forks.csv'))
     if verbose:
@@ -235,7 +280,7 @@ def crawl_repos(df, name, target_folder, verbose):
         print(f"Done - {end-start:.2f} seconds.")
         print("Querying issues...")
         start = time.time()
-    collect(repo_links, name, query_issues,
+    collect(g, repo_links, name, query_issues,
             ['state'],
             os.path.join(target_folder, 'issues.csv'))
     if verbose:
