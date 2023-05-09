@@ -75,6 +75,7 @@ Inside the environment, install the following packages:
 - [`emoji`](https://carpedm20.github.io/emoji/docs/)
 - `Levenshtein`
 - `unidecode`
+- `pydriller`
 
 #### GitHub API
 

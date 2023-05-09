@@ -67,17 +67,18 @@ def query_contributions(row: pd.Series, id_key: str, g: Github):
 def query_readme_history(row: pd.Series, id_key: str, *args, **kwargs):
     repo_link = row[id_key]
     readme_path = row['readme_path']
-    if not readme_path.endswith('md'):
+    if pd.isna(readme_path) or not readme_path.endswith('md'):
         return None
     repo_readme = Repository('https://github.com/'+repo_link, filepath=readme_path)
     history = {k: [] for k in ['author_date', 'added_headings', 'deleted_headings', 'added_cites']}
     for commit in repo_readme.traverse_commits():
         try:
+            added_headings = []
+            deleted_headings = []
+            added_cites = []
+            # look for changes to readme file in commit
             for f in commit.modified_files:
                 if f.new_path == readme_path:
-                    added_headings = []
-                    deleted_headings = []
-                    added_cites = []
                     for _, line in f.diff_parsed['added']:
                         if line.startswith('#'):
                             added_headings.append(line.lstrip('# '))
@@ -88,6 +89,7 @@ def query_readme_history(row: pd.Series, id_key: str, *args, **kwargs):
                     for _, line in f.diff_parsed['deleted']:
                         if line.startswith('#'):
                             deleted_headings.append(line.lstrip('# '))
+                    break
             if len(added_headings) > 0 or len(deleted_headings) > 0 or len(added_cites) > 0:
                 history['author_date'].append(commit.author_date)
                 history['added_headings'].append(added_headings)
