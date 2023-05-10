@@ -1,3 +1,8 @@
+"""
+Samples 100 repositories from Github based on different amounts of stars.
+Some metadata about these repositories is extracted and stored in a dataframe which is written to ../data/representative_set.csv.
+"""
+
 from github import Github, GithubException
 import json
 import pandas as pd
@@ -15,6 +20,14 @@ def get_access_token():
     return config['ACCESS']['token']
 
 def parse_samples(slice):
+    """Creates pandas DataFrame for each Github repository in the slice.
+
+    Args:
+        slice (github.PaginatedList.PaginatedListBase._Slice): slice of a paginated list of repositories
+
+    Returns:
+        pandas.DataFrame: DataFrame with columns holding information about each repository in the slice.
+    """
     samples_dict = {"user_name": [], "repo_name": [], "stars": [], "watchers": [], "forks": [], "commits_no": [], "contributors_no": [], "size_kb": []}
     for s in slice:
         samples_dict["user_name"].append(s.owner.login)
