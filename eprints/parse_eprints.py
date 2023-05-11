@@ -131,7 +131,7 @@ def get_domain_urls(pdf_url, domain, verbose):
         try:
             extract_text_to_fp(BytesIO(pdf.content), out, output_type="text")
             text = out.getvalue().decode("utf-8")
-            pattern = rf"(?P<url>https?://(www.)?{domain}[^\s]+)"
+            pattern = rf"(?P<url>https?://(www\.)?{re.escape(domain)}[^\s]+)"
             for match in re.finditer(pattern, text):
                 yield match.group("url")
         except Exception:
