@@ -140,3 +140,4 @@ dmypy.json
 # data
 **/data/*
 !data/representative_set.csv
+!data/eprints_repos.txt
