@@ -151,9 +151,11 @@ def main(repo, date, domain, local, verbose):
                 pdf_dict['author_for_reference'].append(temp_dict['author_for_reference'])
                 pdf_dict['url'].append(git_url)
     if verbose:
-        print(f"Extracted URLs of domain {domain}.")
+        print(f"Extracted URLs of domain {domain} from respository {repo}.")
     df = pd.DataFrame(pdf_dict)
     df.to_csv(f"../data/extracted_urls_{repo}_{date}_{domain}.csv", index=False)
+    if verbose:
+        print(f"Saved extracted URLs in ../data/extracted_urls_{repo}_{date}_{domain}.csv")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
