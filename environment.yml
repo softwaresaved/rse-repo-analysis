@@ -1,0 +1,7 @@
+channels:
+  - defaults
+dependencies:
+  - pandas
+  - pip
+  - matplotlib
+  - jupyter
