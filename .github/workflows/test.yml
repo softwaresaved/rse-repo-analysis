@@ -9,6 +9,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           environment-file: environment.yml
+          activate-environment: rse-repo-study
       - run: conda info
       - run: conda list
       - run: pwd

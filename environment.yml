@@ -1,3 +1,4 @@
+name: rse-repo-study
 channels:
   - defaults
 dependencies:
