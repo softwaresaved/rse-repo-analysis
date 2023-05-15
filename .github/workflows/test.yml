@@ -1,0 +1,11 @@
+name: test
+run-name: ${{ github.actor }} is running tests
+on: [push]
+jobs:
+  github-crawl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: pwd
+      - run: python3 github/crawl.py -f data/representative_set.csv -n github_id -v
+      
