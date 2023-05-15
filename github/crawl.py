@@ -331,6 +331,7 @@ def crawl_repos(df, name, target_folder, verbose):
     repo_links = df[[name]]
     g = Github(get_access_token())
     if verbose:
+        print(g.rate_limiting)
         print("Querying contributions...")
         start = time.time()
     collect(g, repo_links, name, query_contributions,
