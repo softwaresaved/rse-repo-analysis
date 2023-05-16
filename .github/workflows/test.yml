@@ -18,6 +18,5 @@ jobs:
       - run: conda list
       - run: pwd
       - run: cp config_example.cfg config.cfg
-      - run: sed -i "s/<your-access-token>/${{ secrets.GITHUB_TOKEN }}/" config.cfg
+      - run: sed -i "s/<your-access-token>/${{ secrets.TOKEN_TEST }}/" config.cfg
       - run: cd github && python3 crawl.py -f ../data/representative_set.csv -n github_id -v
-      
