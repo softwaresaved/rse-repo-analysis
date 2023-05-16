@@ -8,7 +8,6 @@ jobs:
       run:
         shell: bash -el {0}
     steps:
-      - uses: actions/checkout@v3
       - uses: ./.github/workflows/build.yml
       - name: Setup personal access token
         run: |
@@ -24,7 +23,6 @@ jobs:
       run:
         shell: bash -el {0}
     steps:
-      - uses: actions/checkout@v3
       - uses: ./.github/workflows/build.yml
       - name: Test parsing remote eprints
         working-directory: ./eprints
