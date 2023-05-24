@@ -123,8 +123,8 @@ def get_domain_urls(pdf_url, domain, verbose):
     Yields:
         str: found URL
     """
-    pdf = requests.get(pdf_url)
-    if pdf.status_code == 200 and "pdf" in pdf.headers['content-type']:
+    pdf = requests.get(pdf_url, stream=True)
+    if pdf.status_code == 200 and "pdf" in pdf.headers['content-type'] and int(pdf.headers['content-length']) < 5e8:
         if verbose:
             print(f"Parsing {pdf_url}")
         out = BytesIO()
