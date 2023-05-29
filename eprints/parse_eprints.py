@@ -126,7 +126,7 @@ def get_domain_urls(pdf_url, domain, verbose):
     """
     pattern = rf"(?P<url>https?://(www\.)?{re.escape(domain)}[^\s]+)"
     pdf = requests.get(pdf_url, stream=True)
-    if pdf.status_code == 200 and "pdf" in pdf.headers['content-type'] and int(pdf.headers['content-length']) < 5e8:
+    if pdf.status_code == 200 and "pdf" in pdf.headers['content-type'] and int(pdf.headers['content-length']) < 5e7:  # ignore files larger than 50 MB to avoid OOM error
         if verbose:
             print(f"Parsing {pdf_url}")
         try:
