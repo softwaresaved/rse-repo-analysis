@@ -4,7 +4,8 @@ import re
 import argparse
 import pandas as pd
 from io import BytesIO
-from pdfminer.high_level import extract_text_to_fp
+from pdfminer.high_level import extract_pages
+from pdfminer.layout import LTTextContainer
 
 def get_paper_list(repo, date, path):
     """Sends request to repository for papers in the specified date range. Writes output to XML file.
@@ -123,17 +124,18 @@ def get_domain_urls(pdf_url, domain, verbose):
     Yields:
         str: found URL
     """
+    pattern = rf"(?P<url>https?://(www\.)?{re.escape(domain)}[^\s]+)"
     pdf = requests.get(pdf_url, stream=True)
     if pdf.status_code == 200 and "pdf" in pdf.headers['content-type'] and int(pdf.headers['content-length']) < 5e8:
         if verbose:
             print(f"Parsing {pdf_url}")
-        out = BytesIO()
         try:
-            extract_text_to_fp(BytesIO(pdf.content), out, output_type="text")
-            text = out.getvalue().decode("utf-8")
-            pattern = rf"(?P<url>https?://(www\.)?{re.escape(domain)}[^\s]+)"
-            for match in re.finditer(pattern, text):
-                yield match.group("url")
+            for page_no, page_layout in enumerate(extract_pages(BytesIO(pdf.content))):
+                for element in page_layout:
+                    if isinstance(element, LTTextContainer):
+                        text = element.get_text()
+                        for match in re.finditer(pattern, text):
+                            yield (page_no, match.group("url"))
         except Exception:
             pass
 
@@ -143,13 +145,14 @@ def main(repo, date, domain, local, verbose):
         get_paper_list(repo, date, path)
         if verbose:
             print("Downloaded XML list of publications.")
-    pdf_dict = {'title': [], 'author_for_reference': [], 'url': []}
+    pdf_dict = {'title': [], 'author_for_reference': [], 'url': [], 'page_no': []}
     for temp_dict in parse_pdf_urls(path):
         for pdf_url in temp_dict['urls']:
-            for git_url in get_domain_urls(pdf_url, domain, verbose):
+            for page_no, git_url in get_domain_urls(pdf_url, domain, verbose):
                 pdf_dict['title'].append(temp_dict['title'])
                 pdf_dict['author_for_reference'].append(temp_dict['author_for_reference'])
                 pdf_dict['url'].append(git_url)
+                pdf_dict['page_no'].append(page_no)
     if verbose:
         print(f"Extracted URLs of domain {domain} from respository {repo}.")
     df = pd.DataFrame(pdf_dict)
