@@ -26,11 +26,18 @@ def query_issues(row: pd.Series, id_key: str, g: Github):
         try:
             issues_paged = repo.get_issues(state='all')
             for i in issues_paged:
-                issues['state'].append(i.state)
-                issues['created_at'].append(i.created_at)
-                issues['user'].append(i.user.login)
-                issues['closed_at'].append(i.closed_at)
-                issues['closed_by'].append(i.closed_by)
+                for inner_tries in range(2):
+                    try:
+                        issues['state'].append(i.state)
+                        issues['created_at'].append(i.created_at)
+                        issues['user'].append(i.user.login)
+                        issues['closed_at'].append(i.closed_at)
+                        issues['closed_by'].append(i.closed_by)
+                    except RateLimitExceededException:
+                        if inner_tries == 0:
+                            catch_rate_limit(g)
+                        else:
+                            raise
         except RateLimitExceededException:
             if tries == 0:
                 catch_rate_limit(g)

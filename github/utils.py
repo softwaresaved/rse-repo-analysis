@@ -33,6 +33,7 @@ def catch_rate_limit(g):
     print("Now: ", now)
     print("Wait for: ", delta.seconds+5)
     sleep(delta.seconds+5)
+    print("Now: ", datetime.now(tz=timezone.utc))
     print("Resume execution:", g.rate_limiting)
 
 def safe_load_repo(g, link, func_name):
@@ -81,7 +82,10 @@ def collect(g, df, name, func, drop_names, path):
     cols = list(d.columns)
     cols_to_ignore = list(df.columns)
     cols_to_explode = [c for c in cols if not c in cols_to_ignore]
-    d = d.dropna().explode(cols_to_explode)
+    try:
+        d = d.dropna().explode(cols_to_explode)
+    except ValueError:  # explode can do this, just try not to throw it all away...
+        d = d.dropna()
     if len(drop_names) > 0:
         d.dropna(axis=0, how='all', subset=drop_names, inplace=True)
     d.to_csv(path)
