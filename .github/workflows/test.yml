@@ -45,9 +45,6 @@ jobs:
       - name: Test crawling contributions script
         working-directory: ./github
         run: python3 crawl_contributions.py -f ../data/test_set.csv -n github_id -v
-      - name: Test crawling engagement script
-        working-directory: ./github
-        run: python3 crawl_engagement.py -f ../data/test_set.csv -n github_id -v
       - run: ls -l data/
   github-crawl-engagement:
     runs-on: ubuntu-latest
