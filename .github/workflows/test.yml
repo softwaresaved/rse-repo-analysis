@@ -107,6 +107,10 @@ jobs:
           environment-file: environment.yml
           auto-activate-base: false
       - run: conda info
+      - name: Setup personal access token
+        run: |
+          cp config_example.cfg config.cfg
+          sed -i "s/<your-access-token>/${{ secrets.TOKEN_TEST }}/" config.cfg
       - name: Test parsing remote eprints
         working-directory: ./eprints
         run: python3 parse_eprints.py --repo eprints.soton.ac.uk --date 2022- --domain github.com -v
