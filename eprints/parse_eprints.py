@@ -1,11 +1,7 @@
 import requests
 from lxml import etree
-import re
 import argparse
 import pandas as pd
-from io import BytesIO
-from pdfminer.high_level import extract_pages
-from pdfminer.layout import LTTextContainer
 
 def get_paper_list(repo, date, path):
     """Sends request to repository for papers in the specified date range. Writes output to XML file.
@@ -112,63 +108,37 @@ def parse_pdf_urls(path):
                     for file in files:
                         urls += get_specific_fields_content(file, "url")
         if len(urls) > 0:  # NOTE: can sometimes include jpegs, docx etc.
-            yield {"title": title, "urls": urls, "author_for_reference": author_name_for_reference}
+            n = len(urls)
+            yield {"title": [title for _ in range(n)], "url": urls, "author_for_reference": [author_name_for_reference for _ in range(n)]}
 
-def get_domain_urls(pdf_url, domain, verbose):
-    """Yields matches of URLs of the domain in the PDF.
-
-    Args:
-        pdf_url (str): download URL of PDF
-        domain (str): domain to scan for, e.g. github.com
-
-    Yields:
-        str: found URL
-    """
-    pattern = rf"(?P<url>https?://(www\.)?{re.escape(domain)}[^\s]+)"
-    pdf = requests.get(pdf_url, stream=True)
-    if pdf.status_code == 200 and "pdf" in pdf.headers['content-type'] and int(pdf.headers['content-length']) < 5e7:  # ignore files larger than 50 MB to avoid OOM error
-        if verbose:
-            print(f"Parsing {pdf_url}")
-        try:
-            for page_no, page_layout in enumerate(extract_pages(BytesIO(pdf.content))):
-                for element in page_layout:
-                    if isinstance(element, LTTextContainer):
-                        text = element.get_text()
-                        for match in re.finditer(pattern, text):
-                            yield (page_no, match.group("url"))
-        except Exception:
-            pass
-
-def main(repo, date, domain, local, verbose):
+def main(repo, date, local, verbose):
     path = f"../data/export_{repo}_{date}.xml"
     if not local:
         get_paper_list(repo, date, path)
         if verbose:
             print("Downloaded XML list of publications.")
-    pdf_dict = {'title': [], 'author_for_reference': [], 'url': [], 'page_no': []}
+    pdf_dict = {'title': [], 'author_for_reference': [], 'pdf_url': []}
     for temp_dict in parse_pdf_urls(path):
-        for pdf_url in temp_dict['urls']:
-            for page_no, git_url in get_domain_urls(pdf_url, domain, verbose):
-                pdf_dict['title'].append(temp_dict['title'])
-                pdf_dict['author_for_reference'].append(temp_dict['author_for_reference'])
-                pdf_dict['url'].append(git_url)
-                pdf_dict['page_no'].append(page_no)
+        pdf_dict['title'] += temp_dict['title']
+        pdf_dict['author_for_reference'] += temp_dict['author_for_reference']
+        pdf_dict['pdf_url'] += temp_dict['url']
     if verbose:
-        print(f"Extracted URLs of domain {domain} from respository {repo}.")
+        print(f"Extracted PDF download URLs from respository {repo}.")
     df = pd.DataFrame(pdf_dict)
-    df.to_csv(f"../data/extracted_urls_{repo}_{date}_{domain}.csv", index=False)
+    df.drop_duplicates(subset=['pdf_url'], inplace=True)
+    df.dropna(inplace=True)
+    df.to_csv(f"../data/extracted_pdf_urls_{repo}_{date}.csv", index=False)
     if verbose:
-        print(f"Saved extracted URLs in ../data/extracted_urls_{repo}_{date}_{domain}.csv")
+        print(f"Saved extracted URLs in ../data/extracted_pdf_urls_{repo}_{date}.csv")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog="parse_eprints",
-        description="Query ePrints repository for publications, scan the downloadable publications for links of a specific domain name, e.g. github.com."
+        description="Query ePrints repository for publications, extract PDF download URLs.."
     )
     parser.add_argument("--repo", required=True, type=str, help="name of ePrints repository (i.e. domain)")
     parser.add_argument("--date", required=True, type=str, help="date range for filtering ePrints, e.g. 2021-2022")
-    parser.add_argument("--domain", required=True, type=str, help="domain to match against (only one can be provided for now, e.g. github.com)")
     parser.add_argument("--local", action="store_true", help="use local ePrints XML output instead of downloading from web")
     parser.add_argument("-v", "--verbose", action="store_true", help="enable verbose output")
     args = parser.parse_args()
-    main(args.repo, args.date, args.domain, args.local, args.verbose)
+    main(args.repo, args.date, args.local, args.verbose)

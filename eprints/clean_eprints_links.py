@@ -29,7 +29,7 @@ def clean_by_pattern(row, domain):
         list<str>: List of cleaned links.
     """
     pattern = rf"{domain}/[A-Za-z0-9-]+/[A-Za-z_\-]+"
-    cleaned = re.findall(pattern, unidecode(row['url']))
+    cleaned = re.findall(pattern, unidecode(row['domain_url']))
     return cleaned
 
 def clean_by_user(row, column, verbose):

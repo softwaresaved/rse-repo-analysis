@@ -110,8 +110,11 @@ jobs:
           sed -i "s/<your-access-token>/${{ secrets.TOKEN_TEST }}/" config.cfg
       - name: Test parsing remote eprints
         working-directory: ./eprints
-        run: python3 parse_eprints.py --repo eprints.soton.ac.uk --date 2022- --domain github.com -v
+        run: python3 parse_eprints.py --repo eprints.soton.ac.uk --date 2022-2023 -v
+      - name: Test parsing PDFs
+        working-directory: ./eprints
+        run: python3 parse_pdfs.py --repo eprints.soton.ac.uk --date 2022-2023 --domain github.com -v
       - name: Test cleaning links
         working-directory: ./eprints
-        run: python3 clean_eprints_links.py --repo eprints.soton.ac.uk --date 2022- --domain github.com -v
+        run: python3 clean_eprints_links.py --repo eprints.soton.ac.uk --date 2022-2023 --domain github.com -v
       - run: ls -l data/
