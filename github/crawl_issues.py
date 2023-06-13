@@ -57,6 +57,7 @@ def crawl_repos(df, name, target_folder, verbose):
         verbose (bool): toggles verbose output
     """
     repo_links = df[[name]]
+    repo_links = repo_links.drop_duplicates()
     g = Github(get_access_token())
     if verbose:
         print(g.rate_limiting)
