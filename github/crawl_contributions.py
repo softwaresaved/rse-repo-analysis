@@ -26,17 +26,26 @@ def query_contributions(row: pd.Series, id_key: str, g: Github):
         try:
             contribution_stats = repo.get_stats_contributors()
             if contribution_stats is not None:
-                for s in contribution_stats:
-                    for w in s.weeks:
-                        contributions['author'].append(s.author.login)
-                        contributions['year'].append(w.w.year)
-                        contributions['week'].append(w.w.isocalendar().week)
-                        contributions['commits'].append(w.c)
+                for inner_tries in range(2):
+                    try:
+                        for s in contribution_stats:
+                            for w in s.weeks:
+                                contributions['author'].append(s.author.login)
+                                contributions['year'].append(w.w.year)
+                                contributions['week'].append(w.w.isocalendar().week)
+                                contributions['commits'].append(w.c)
+                    except RateLimitExceededException:
+                        if inner_tries == 0:
+                            catch_rate_limit(g)
+                        else:
+                            raise
+                    break
         except RateLimitExceededException:
             if tries == 0:
                 catch_rate_limit(g)
             else:
                 raise
+        break
     for k, v in contributions.items():
         row[k] = v
     return row

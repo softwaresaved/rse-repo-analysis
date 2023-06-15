@@ -38,11 +38,13 @@ def query_issues(row: pd.Series, id_key: str, g: Github):
                             catch_rate_limit(g)
                         else:
                             raise
+                    break
         except RateLimitExceededException:
             if tries == 0:
                 catch_rate_limit(g)
             else:
                 raise
+        break
     for k, v in issues.items():
         row[k] = v
     return row

@@ -27,13 +27,22 @@ def query_stars(row: pd.Series, id_key: str, g: Github):
         try:
             stargazers = repo.get_stargazers_with_dates()
             for sg in stargazers:
-                stars['date'].append(sg.starred_at)
-                stars['user'].append(sg.user.login)
+                for inner_tries in range(2):
+                    try:
+                        stars['date'].append(sg.starred_at)
+                        stars['user'].append(sg.user.login)
+                    except RateLimitExceededException:
+                        if inner_tries == 0:
+                            catch_rate_limit(g)
+                        else:
+                            raise
+                    break
         except RateLimitExceededException:
             if tries == 0:
                 catch_rate_limit(g)
             else:
                 raise
+        break
     for k, v in stars.items():
         row[k] = v
     return row
@@ -58,13 +67,22 @@ def query_forks(row: pd.Series, id_key: str, g: Github):
         try:
             forks_list = repo.get_forks()
             for f in forks_list:
-                forks['date'].append(f.created_at)
-                forks['user'].append(f.owner.login)
+                for inner_tries in range(2):
+                    try:
+                        forks['date'].append(f.created_at)
+                        forks['user'].append(f.owner.login)
+                    except RateLimitExceededException:
+                        if inner_tries == 0:
+                            catch_rate_limit(g)
+                        else:
+                            raise
+                    break
         except RateLimitExceededException:
             if tries == 0:
                 catch_rate_limit(g)
             else:
                 raise
+        break
     for k, v in forks.items():
         row[k] = v
     return row
