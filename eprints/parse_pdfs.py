@@ -1,9 +1,8 @@
 import requests
 import re
 import argparse
+import resource
 import pandas as pd
-from gc import collect
-from psutil import virtual_memory
 from io import BytesIO
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTTextContainer
@@ -21,12 +20,12 @@ def get_domain_urls(row, domain, verbose):
     pattern = rf"(?P<url>https?://(www\.)?{re.escape(domain)}[^\s]+)"
     matches = {k: [] for k in ['page_no', 'domain_url']}
     pdf = requests.get(row['pdf_url'], stream=True)
-    if pdf.status_code == 200 and "pdf" in pdf.headers['content-type'] and int(pdf.headers['content-length']) < 2e6:  # ignore files larger than 2 MB to avoid OOM error
+    if pdf.status_code == 200 and "pdf" in pdf.headers['content-type'] and int(pdf.headers['content-length']) < 5e7:  # ignore files larger than 50 MB to avoid OOM error
         if verbose:
-            print(f"Available RAM: {virtual_memory().available}")
             print(f"Parsing {row['pdf_url']} of size {int(pdf.headers['content-length'])}")
         try:
-            for page_no, page_layout in enumerate(extract_pages(BytesIO(pdf.content))):
+            page_layouts = extract_pages(BytesIO(pdf.content))
+            for page_no, page_layout in enumerate(page_layouts):
                 for element in page_layout:
                     if isinstance(element, LTTextContainer):
                         text = element.get_text()
@@ -40,7 +39,6 @@ def get_domain_urls(row, domain, verbose):
             print(f"Ignoring {row['pdf_url']} of size {int(pdf.headers['content-length'])}")
     for k, v in matches.items():
         row[k] = v
-    collect()
     return row
 
 def main(repo, date, domain, verbose):
@@ -57,6 +55,8 @@ def main(repo, date, domain, verbose):
         print(f"Saved extracted URLs in ../data/extracted_urls_{repo}_{date}_{domain}.csv")
 
 if __name__ == "__main__":
+    soft, hard = resource.getrlimit(resource.RLIMIT_AS)
+    resource.setrlimit(resource.RLIMIT_AS, (2000000000, hard))
     parser = argparse.ArgumentParser(
         prog="parse_pdfs",
         description="Scan the downloadable publications for links of a specific domain name, e.g. github.com."
