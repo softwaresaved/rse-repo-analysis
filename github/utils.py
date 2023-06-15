@@ -31,10 +31,10 @@ def catch_rate_limit(g):
     now = datetime.now(tz=timezone.utc)
     delta = reset - now
     print("Now: ", now)
-    print("Wait for: ", delta.seconds+5)
-    sleep(delta.seconds+5)
+    print("Wait for: ", delta.seconds+60)
+    sleep(delta.seconds+60)
     print("Now: ", datetime.now(tz=timezone.utc))
-    print("Resume execution:", g.rate_limiting)
+    print("Resume execution:",  g.get_rate_limit().core)
 
 def safe_load_repo(g, link, func_name):
     """Attempts to load a repository, catching exceptions.
