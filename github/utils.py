@@ -82,10 +82,12 @@ def collect(g, df, name, func, drop_names, path):
     cols = list(d.columns)
     cols_to_ignore = list(df.columns)
     cols_to_explode = [c for c in cols if not c in cols_to_ignore]
+    d = d.dropna()
     try:
-        d = d.dropna().explode(cols_to_explode)
-    except ValueError:  # explode can do this, just try not to throw it all away...
-        d = d.dropna()
+        d = d.explode(cols_to_explode)
+    except ValueError:
+        msg = traceback.format_exc()
+        print(f"[WARNING] Could not explode DataFrame:\n{msg}\n")
     if len(drop_names) > 0:
         d.dropna(axis=0, how='all', subset=drop_names, inplace=True)
     d.to_csv(path)
