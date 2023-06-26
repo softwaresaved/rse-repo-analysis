@@ -32,7 +32,11 @@ def query_issues(row: pd.Series, id_key: str, g: Github):
                         issues['created_at'].append(i.created_at)
                         issues['user'].append(i.user.login)
                         issues['closed_at'].append(i.closed_at)
-                        issues['closed_by'].append(i.closed_by.login)
+                        closed_by = i.closed_by
+                        if closed_by is not None:
+                            issues['closed_by'].append(i.closed_by.login)
+                        else:
+                            issues['closed_by'].append(i.closed_by)
                     except RateLimitExceededException:
                         if inner_tries == 0:
                             catch_rate_limit(g)
