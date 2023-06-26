@@ -1,6 +1,5 @@
 import pandas as pd
 import argparse
-from matplotlib import pyplot as plt
 
 def load_cleaned_links(repo, date, domain):
     path = f"../data/cleaned_urls_{repo}_{date}_{domain}.csv"
