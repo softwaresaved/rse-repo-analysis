@@ -83,11 +83,15 @@ def collect(g, df, name, func, drop_names, path):
     cols_to_ignore = list(df.columns)
     cols_to_explode = [c for c in cols if not c in cols_to_ignore]
     d = d.dropna()
+    store_pickled_backup = False
     try:
         d = d.explode(cols_to_explode)
     except ValueError:
         msg = traceback.format_exc()
         print(f"[WARNING] Could not explode DataFrame:\n{msg}\n")
+        store_pickled_backup = True
     if len(drop_names) > 0:
         d.dropna(axis=0, how='all', subset=drop_names, inplace=True)
     d.to_csv(path)
+    if store_pickled_backup:  # if explode did not work, pickle will preserve lists
+        d.to_pickle(path[:-3] + "pickle")

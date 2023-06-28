@@ -28,21 +28,24 @@ def query_issues(row: pd.Series, id_key: str, g: Github):
             for i in issues_paged:
                 for inner_tries in range(2):
                     try:
-                        issues['state'].append(i.state)
-                        issues['created_at'].append(i.created_at)
-                        issues['user'].append(i.user.login)
-                        issues['closed_at'].append(i.closed_at)
+                        state = i.state
+                        created_at = i.created_at
+                        user = i.user.login
+                        closed_at = i.closed_at
                         closed_by = i.closed_by
                         if closed_by is not None:
-                            issues['closed_by'].append(i.closed_by.login)
-                        else:
-                            issues['closed_by'].append(i.closed_by)
+                            closed_by = closed_by.login
                     except RateLimitExceededException:
                         if inner_tries == 0:
                             catch_rate_limit(g)
                         else:
                             raise
                     break
+                issues['state'].append(state)
+                issues['created_at'].append(created_at)
+                issues['user'].append(user)
+                issues['closed_at'].append(closed_at)
+                issues['closed_by'].append(i.closed_by)
         except RateLimitExceededException:
             if tries == 0:
                 catch_rate_limit(g)
