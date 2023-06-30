@@ -89,7 +89,29 @@ jobs:
       - name: Test crawling issues script
         working-directory: ./github
         run: python3 crawl_issues.py -f ../data/test_set.csv -n github_id -v
-      - run: ls -l data/                
+      - run: ls -l data/        
+  github-crawl-metadata:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: rse-repo-study
+          environment-file: environment.yml
+          auto-activate-base: false
+      - run: conda info
+      - name: Setup personal access token
+        run: |
+          cp config_example.cfg config.cfg
+          sed -i "s/<your-access-token>/${{ secrets.TOKEN_TEST }}/" config.cfg
+      - name: Test crawling issues script
+        working-directory: ./github
+        run: python3 crawl_metadata.py -f ../data/test_set.csv -n github_id -v
+      - run: ls -l data/             
   eprints-parse:
     runs-on: ubuntu-latest
     defaults:
