@@ -142,3 +142,4 @@ dmypy.json
 !data/representative_set.csv
 !data/test_set.csv
 !data/eprints_repos.txt
+!analysis/*
