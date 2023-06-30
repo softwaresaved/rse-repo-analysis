@@ -53,7 +53,7 @@ def crawl_repos(df, name, target_folder, verbose):
     g = Github(get_access_token())
     if verbose:
         print(g.rate_limiting)
-        print("Querying stargazers...")
+        print("Querying metadata...")
         start = time.time()
     collect(g, repo_links, name, query_metadata, 
             [],
