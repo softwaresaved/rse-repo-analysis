@@ -2,6 +2,7 @@ import argparse
 import pandas as pd
 import os
 import time
+import resource
 from github import Github
 from github.GithubException import RateLimitExceededException, UnknownObjectException
 from emoji import emoji_count
@@ -146,6 +147,8 @@ def main(path, name, verbose):
     crawl_repos(df, name, target_folder, verbose)
 
 if __name__ == "__main__":
+    soft, hard = resource.getrlimit(resource.RLIMIT_AS)
+    resource.setrlimit(resource.RLIMIT_AS, (2000000000, hard))
     parser = argparse.ArgumentParser(
         prog="crawl",
         description="Given a dataframe with columns user_name and repo_name, gather data from the corresponding GitHub repository."
