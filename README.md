@@ -76,6 +76,7 @@ Inside the environment, install the following packages:
 - `Levenshtein`
 - `unidecode`
 - `pydriller`
+- `wordcloud`
 
 #### GitHub API
 
