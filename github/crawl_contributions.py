@@ -16,9 +16,9 @@ def query_contributions(row: pd.Series, id_key: str, g: Github):
         g (Github): authenticated access to Github API
 
     Returns:
-        pd.Series: added columns ['author', 'year', 'week', 'commits']
+        pd.Series: added columns ['author', 'week_co', 'commits']
     """
-    contributions = {k: [] for k in ['author', 'year', 'week', 'commits']}
+    contributions = {k: [] for k in ['author', 'week_co', 'commits']}
     repo = safe_load_repo(g, row[id_key], "query_contributions")
     if repo is None:
         return None
@@ -31,8 +31,7 @@ def query_contributions(row: pd.Series, id_key: str, g: Github):
                         for s in contribution_stats:
                             for w in s.weeks:
                                 contributions['author'].append(s.author.login)
-                                contributions['year'].append(w.w.year)
-                                contributions['week'].append(w.w.isocalendar().week)
+                                contributions['week_co'].append(w.w)
                                 contributions['commits'].append(w.c)
                     except RateLimitExceededException:
                         if inner_tries == 0:
@@ -67,7 +66,7 @@ def crawl_repos(df, name, target_folder, verbose):
         print("Querying contributions...")
         start = time.time()
     collect(g, repo_links, name, query_contributions,
-            ['author', 'year', 'week', 'commits'],
+            ['author', 'week_co', 'commits'],
             os.path.join(target_folder, 'contributions.csv'))
     if verbose:
         end = time.time()
