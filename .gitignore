@@ -137,6 +137,8 @@ dmypy.json
 # notebooks for testing
 *.ipynb
 
+*.png
+
 # data
 **/data/*
 !data/representative_set.csv
