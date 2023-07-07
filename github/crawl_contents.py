@@ -66,9 +66,9 @@ def query_contents(row: pd.Series, id_key: str, g: Github):
         g (Github): authenticated access to Github API
 
     Returns:
-        pd.Series: added columns ['license', 'readme_size', 'readme_path', 'readme_emojis', 'contributing_size', 'citation_added']
+        pd.Series: added columns ['license', 'readme_size', 'readme_path', 'readme_emojis', 'contributing_size', 'citation_added', 'contributing_added']
     """
-    contents = {k: [] for k in ['license', 'readme_size', 'readme_path', 'readme_emojis', 'contributing_size', 'citation_added']}
+    contents = {k: [] for k in ['license', 'readme_size', 'readme_path', 'readme_emojis', 'contributing_size', 'citation_added', 'contributing_added']}
     repo = safe_load_repo(g, row[id_key], "query_contents")
     if repo is None:
         return None
@@ -105,6 +105,12 @@ def query_contents(row: pd.Series, id_key: str, g: Github):
         contents['citation_added'].append(next(commits_iterator).author_date)
     except StopIteration:
         contents['citation_added'].append(None)
+    repo_contrib_guidelines = Repository('https://github.com/'+row[id_key], filepath="CONTRIBUTING.md")
+    contrib_guidelines_iterator = repo_contrib_guidelines.traverse_commits()
+    try:
+        contents['contributing_added'].append(next(contrib_guidelines_iterator).author_date)
+    except StopIteration:
+        contents['contributing_added'].append(None)
     for k, v in contents.items():
         row[k] = v
     return row
