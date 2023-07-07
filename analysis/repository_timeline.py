@@ -120,15 +120,19 @@ def no_open_and_closed_issues(issues, metadata, ax):
         # ylabel="count"
         )
     
-def readme_heading_highlights(readme_history, metadata, ax):
+def date_highlights(readme_history, contents, metadata, ax):
     df = pd.merge(metadata, readme_history, on="github_user_cleaned_url")
     df.dropna(subset=["author_date"], inplace=True)
     df["authored_in_week_since_creation"] = (df.author_date - df.created_at).dt.days // 7
+    # headings
     df = analyse_headings(df)
     ownership_added = df[df.ownership_addition].authored_in_week_since_creation
-    ax.scatter(ownership_added, (-2 * np.ones((len(ownership_added),))), marker="v", color="black", label="ownership heading")
+    ax.scatter(ownership_added, (-2 * np.ones((len(ownership_added),))), marker="v", label="ownership heading")
     usage_added = df[df.usage_addition].authored_in_week_since_creation
-    ax.scatter(usage_added, (-1 * np.ones((len(usage_added),))), marker="v", color="red", label="usage heading")
+    ax.scatter(usage_added, (-1 * np.ones((len(usage_added),))), marker="v", label="usage heading")
+    # citation in README
+    citation_added = df[(df.added_cites != "[]") & (df.added_cites.notna())]
+    ax.scatter(citation_added, (-3 * np.ones((len(citation_added),))), marker="v", label="citation in README")
 
 def main(repo, dir, verbose):
     info(verbose, "Loading data...")
@@ -147,7 +151,7 @@ def main(repo, dir, verbose):
     contributor_team_size(contributions, metadata, axs[0])
     axs[0].legend()
     no_open_and_closed_issues(issues, metadata, axs[1])
-    readme_heading_highlights(readme_history, metadata, axs[1])
+    date_highlights(readme_history, metadata, axs[1])
     axs[1].legend()
     fig.suptitle(repo)
     s = repo.replace("/", "-")
