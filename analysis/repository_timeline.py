@@ -2,7 +2,10 @@ import argparse
 import pandas as pd
 import numpy as np
 import os
-from datetime import datetime
+import string
+import re
+import ast
+from datetime import datetime, timezone
 from matplotlib import pyplot as plt
 
 def info(verbose, msg):
@@ -14,9 +17,18 @@ def load_data(data_dir, filename, repo, to_datetime=None):
     df = df[df["github_user_cleaned_url"] == repo]
     if type(to_datetime) == list:
         for dt in to_datetime:
-            df[dt] = pd.to_datetime(df[dt])
+            df[dt] = pd.to_datetime(df[dt], utc=True)
     elif type(to_datetime) == str:
-        df[to_datetime] = pd.to_datetime(df[to_datetime])
+        df[to_datetime] = pd.to_datetime(df[to_datetime], utc=True)
+    return df
+
+def analyse_headings(df):
+    interesting_words = {
+        "ownership": ["license", "example", "reference", "citation", "cited", "publication", "paper"],
+        "usage": ["requirements", "using", "example", "usage", "run", "install", "installing", "installation", "tutorial", "tutorials", "build", "guide", "documentation"]
+    }
+    df["ownership_addition"] = df.added_headings.str.contains("|".join(interesting_words["ownership"]), case=False)
+    df["usage_addition"] = df.added_headings.str.contains("|".join(interesting_words["usage"]), case=False)
     return df
 
 def determine_user_type_for_week(row):
@@ -40,7 +52,7 @@ def user_type_wrt_issues(issues, metadata, ax):
     for col in ["created_at_first", "closed_at_first", "created_at_last", "closed_at_last"]:
         issue_dates[col] = (issue_dates[col] - issue_dates["created_at"]).dt.days // 7
     # build weekly dataframe
-    end = (datetime.today() - metadata.created_at.iloc[0]).days // 7
+    end = (datetime.now(tz=timezone.utc) - metadata.created_at.iloc[0]).days // 7
     x_data = pd.Series(np.arange(end), name="week_since_repo_creation")
     df = pd.merge(x_data, issue_dates, how="cross")
     # map user type
@@ -88,7 +100,7 @@ def no_open_and_closed_issues(issues, metadata, ax):
     issues_timeline_df["opened_in_week_since_repo_creation"] = (issues_timeline_df.created_at - issues_timeline_df.created_at_repo).dt.days // 7
     issues_timeline_df["closed_in_week_since_repo_creation"] = (issues_timeline_df.closed_at - issues_timeline_df.created_at_repo).dt.days // 7
     # build weekly dataframe
-    end = (datetime.today() - metadata.created_at.iloc[0]).days // 7
+    end = (datetime.now(tz=timezone.utc) - metadata.created_at.iloc[0]).days // 7
     x_data = pd.Series(np.arange(end), name="week_since_repo_creation")
     issue_count_timeline = pd.DataFrame(x_data)
     # count issues
@@ -107,6 +119,16 @@ def no_open_and_closed_issues(issues, metadata, ax):
         # xlabel="week since repo creation",
         # ylabel="count"
         )
+    
+def readme_heading_highlights(readme_history, metadata, ax):
+    df = pd.merge(metadata, readme_history, on="github_user_cleaned_url")
+    df.dropna(subset=["author_date"], inplace=True)
+    df["authored_in_week_since_creation"] = (df.author_date - df.created_at).dt.days // 7
+    df = analyse_headings(df)
+    ownership_added = df[df.ownership_addition].authored_in_week_since_creation
+    ax.scatter(ownership_added, (-2 * np.ones((len(ownership_added),))), marker="v", color="black", label="ownership heading")
+    usage_added = df[df.usage_addition].authored_in_week_since_creation
+    ax.scatter(usage_added, (-1 * np.ones((len(usage_added),))), marker="v", color="red", label="usage heading")
 
 def main(repo, dir, verbose):
     info(verbose, "Loading data...")
@@ -125,6 +147,8 @@ def main(repo, dir, verbose):
     contributor_team_size(contributions, metadata, axs[0])
     axs[0].legend()
     no_open_and_closed_issues(issues, metadata, axs[1])
+    readme_heading_highlights(readme_history, metadata, axs[1])
+    axs[1].legend()
     fig.suptitle(repo)
     s = repo.replace("/", "-")
     output_dir = "repo_timelines"
