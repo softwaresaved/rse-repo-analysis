@@ -77,6 +77,7 @@ Inside the environment, install the following packages:
 - `unidecode`
 - `pydriller`
 - `wordcloud`
+- `seaborn`
 
 #### GitHub API
 

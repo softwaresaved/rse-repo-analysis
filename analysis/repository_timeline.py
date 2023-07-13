@@ -2,9 +2,7 @@ import argparse
 import pandas as pd
 import numpy as np
 import os
-import string
-import re
-import ast
+import seaborn as sns
 from datetime import datetime, timezone
 from matplotlib import pyplot as plt
 
@@ -31,50 +29,40 @@ def analyse_headings(df):
     df["usage_addition"] = df.added_headings.str.contains("|".join(interesting_words["usage"]), case=False)
     return df
 
-def determine_user_type_for_week(row):
-    margin = 12
-    status = "inactive"
-    if row.week_since_repo_creation >= row.created_at_first and row.week_since_repo_creation <= (row.created_at_last + margin):
-        status = "opening"
-        if row.week_since_repo_creation >= row.closed_at_first and row.week_since_repo_creation <= (row.closed_at_last + margin):
-            status = "both"
-    elif row.week_since_repo_creation >= row.closed_at_first and row.week_since_repo_creation <= (row.closed_at_last + margin):
-        status = "closing"
-    row["status"] = status
-    return row
-
 def user_type_wrt_issues(issues, metadata, ax):
-    # calculate week since repo creation that issue was created or closed in
-    first = issues.groupby(["user", "github_user_cleaned_url"])[["created_at", "closed_at"]].min()
-    last = issues.groupby(["user", "github_user_cleaned_url"])[["created_at", "closed_at"]].max()
-    issue_dates = pd.merge(first, last, on=["user", "github_user_cleaned_url"], suffixes=["_first", "_last"]).reset_index()
-    issue_dates = pd.merge(issue_dates, metadata[["github_user_cleaned_url", "created_at"]], on="github_user_cleaned_url")
-    for col in ["created_at_first", "closed_at_first", "created_at_last", "closed_at_last"]:
-        issue_dates[col] = (issue_dates[col] - issue_dates["created_at"]).dt.days // 7
-    # build weekly dataframe
+    # map dates to weeks
+    merged_df = pd.merge(issues, metadata, on="github_user_cleaned_url", suffixes=(None,"_repo"))
+    merged_df["created_at"] = (merged_df["created_at"] - merged_df["created_at_repo"]).dt.days // 7
+    merged_df["closed_at"] = (merged_df["closed_at"] - merged_df["created_at_repo"]).dt.days // 7
+    # count number of created and closed issues by user + week
+    created = merged_df.groupby(["user", "created_at"])["state"].count().rename("created_count")
+    created.index.rename({"created_at": "week_since_repo_creation"}, inplace=True)
+    closed = merged_df.groupby(["closed_by", "closed_at"])["state"].count().rename("closed_count")
+    closed.index.rename({"closed_at": "week_since_repo_creation", "closed_by": "user"}, inplace=True)
+    issues_by_user = pd.merge(created, closed, left_index=True, right_index=True, how="outer")
+    # build timeline DataFrame
     end = (datetime.now(tz=timezone.utc) - metadata.created_at.iloc[0]).days // 7
     x_data = pd.Series(np.arange(end), name="week_since_repo_creation")
-    df = pd.merge(x_data, issue_dates, how="cross")
-    # map user type
-    df = df.apply(determine_user_type_for_week, axis=1)
-    issue_user_types = df.groupby(["week_since_repo_creation", "status"])["user"].count().unstack()
-    ordered_categories = ["inactive", "opening", "closing", "both"]
-    issue_user_types.columns = pd.CategoricalIndex(
-        issue_user_types.columns.values,
-        ordered=True,
-        categories=ordered_categories)
-    issue_user_types.sort_index(axis=1, inplace=True)
+    df = pd.merge(x_data, pd.Series(issues_by_user.index.unique(level="user")), how="cross").set_index(["user", "week_since_repo_creation"])
+    df = pd.merge(df, issues_by_user, left_index=True, right_index=True, how="outer")
+    df.fillna(0, inplace=True)
+    # determine user status with window of 12 weeks onwards
+    df = df.rolling(window=12, min_periods=0).sum()
+    conditions = [(df.created_count > 0) & (df.closed_count == 0), (df.created_count == 0) & (df.closed_count > 0), (df.created_count > 0) & (df.closed_count > 0)]
+    choices = ["opening", "closing", "both"]
+    df["status"] = np.select(conditions, choices, default="inactive")
     # plot
-    issue_user_types.plot.bar(
-        stacked=True,
-        ax = ax,
-        xlabel="week since repo creation",
-        ylabel="user count",
-        #legend="reverse",
-        color=['#d62728', '#1f77b4', '#ff7f0e', '#2ca02c']
-        #colormap="RdYlGn"
-    )
-    ax.set_xticks(ax.get_xticks()[::10])
+    sns.scatterplot(
+        ax=ax,
+        data=df,
+        x="week_since_repo_creation",
+        y="user",
+        hue="status",
+        hue_order=["inactive", "opening", "closing", "both"],
+        palette=['#d62728', '#1f77b4', '#ff7f0e', '#2ca02c'],
+        marker="|",
+        s=500,
+        )
 
 def contributor_team_size(contributions, metadata, ax):
     team_df = pd.merge(metadata[["github_user_cleaned_url", "created_at"]], contributions)
@@ -145,14 +133,16 @@ def main(repo, dir, verbose):
     stars = load_data(dir, "stars.csv", repo, "date")
     info(verbose, "Data loading complete.")
 
-    fig, axs = plt.subplots(nrows=2, figsize=(20, 10))
+    fig, axs = plt.subplots(nrows=2, figsize=(20, 10), sharex=True)
     info(verbose, "Crunching data...")
     user_type_wrt_issues(issues, metadata, axs[0])
-    contributor_team_size(contributions, metadata, axs[0])
-    axs[0].legend()
+    axs[0].legend(loc="upper right")
+    contributor_team_size(contributions, metadata, axs[1])
     no_open_and_closed_issues(issues, metadata, axs[1])
-    date_highlights(readme_history, metadata, axs[1])
-    axs[1].legend()
+    date_highlights(readme_history, contents, metadata, axs[1])
+    _, right = plt.xlim()
+    plt.xlim(0, right+10)
+    axs[1].legend(loc="upper right")
     fig.suptitle(repo)
     s = repo.replace("/", "-")
     output_dir = "repo_timelines"
