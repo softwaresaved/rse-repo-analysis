@@ -47,14 +47,14 @@ def user_type_wrt_issues(issues, metadata, ax):
     df = pd.merge(df, issues_by_user, left_index=True, right_index=True, how="outer")
     df.fillna(0, inplace=True)
     # determine user status with window of 12 weeks onwards
-    df = df.rolling(window=12, min_periods=0).sum()
-    conditions = [(df.created_count > 0) & (df.closed_count == 0), (df.created_count == 0) & (df.closed_count > 0), (df.created_count > 0) & (df.closed_count > 0)]
+    windowed_df = df.groupby(level="user").rolling(window=12, min_periods=0).sum().droplevel(0)
+    conditions = [(windowed_df.created_count > 0) & (windowed_df.closed_count == 0), (windowed_df.created_count == 0) & (windowed_df.closed_count > 0), (windowed_df.created_count > 0) & (windowed_df.closed_count > 0)]
     choices = ["opening", "closing", "both"]
-    df["status"] = np.select(conditions, choices, default="inactive")
+    windowed_df["status"] = np.select(conditions, choices, default="inactive")
     # plot
     sns.scatterplot(
         ax=ax,
-        data=df,
+        data=windowed_df,
         x="week_since_repo_creation",
         y="user",
         hue="status",
@@ -63,6 +63,7 @@ def user_type_wrt_issues(issues, metadata, ax):
         marker="|",
         s=500,
         )
+    ax.set_ylabel("issue user")
 
 def contributor_team_size(contributions, metadata, ax):
     team_df = pd.merge(metadata[["github_user_cleaned_url", "created_at"]], contributions)
