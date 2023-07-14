@@ -65,18 +65,32 @@ def user_type_wrt_issues(issues, metadata, ax):
         )
     ax.set_ylabel("issue user")
 
-def contributor_team_size(contributions, metadata, ax):
-    team_df = pd.merge(metadata[["github_user_cleaned_url", "created_at"]], contributions)
-    team_df["week_since_repo_creation"] = (team_df.week_co - team_df.created_at).dt.days // 7
-    # determine team membership for each week based on having commited at least once in the last 12 weeks
-    windowed_commits = team_df.groupby(["author"]).rolling(window=12, min_periods=0).commits.sum()
-    team_df["windowed_commits"] = windowed_commits.droplevel(0)
-    team_df["is_team_member"] = team_df.windowed_commits > 0
-    team_size = team_df.groupby(["week_since_repo_creation"]).is_team_member.value_counts().rename("contributor team size")[:,True].reindex(
-        team_df.week_since_repo_creation.unique(), fill_value=0)  # reindex to get weeks where the count is 0
+def contributor_team(contributions, metadata, axs):
+    # map dates to weeks
+    contrib_df = pd.merge(metadata[["github_user_cleaned_url", "created_at"]], contributions)
+    contrib_df["week_since_repo_creation"] = (contrib_df.week_co - contrib_df.created_at).dt.days // 7
+    team_df = contrib_df[["author", "week_since_repo_creation", "commits"]].set_index(["author", "week_since_repo_creation"]).sort_index()
+    # user is active contributor if made at least one commit in last 12 weeks
+    windowed_team_df = team_df.groupby(level="author").rolling(window=12, min_periods=0).sum().droplevel(0)
+    windowed_team_df["active contributor"] = windowed_team_df.commits > 0
+    # plot per-user status
+    sns.scatterplot(
+        ax=axs[0],
+        data=windowed_team_df,
+        x="week_since_repo_creation",
+        y="author",
+        hue="active contributor",
+        hue_order=[False, True],
+        palette=['#d62728', '#2ca02c'],
+        marker="|",
+        s=500,
+    )
+    axs[0].set_ylabel("contributing user")
+    # team size
+    team_size = windowed_team_df.groupby(level="week_since_repo_creation")["active contributor"].value_counts()[:,True].reindex(windowed_team_df.index.levels[1], fill_value=0)
     # plot
     team_size.plot(
-        ax=ax,
+        ax=axs[1],
         color="black",
         lw=2,
         # xlabel="week since repo creation",
@@ -105,6 +119,7 @@ def no_open_and_closed_issues(issues, metadata, ax):
         ax=ax,
         x="week_since_repo_creation",
         y=["open issues", "closed issues"],
+        lw=2,
         # xlabel="week since repo creation",
         # ylabel="count"
         )
@@ -134,19 +149,20 @@ def main(repo, dir, verbose):
     stars = load_data(dir, "stars.csv", repo, "date")
     info(verbose, "Data loading complete.")
 
-    fig, axs = plt.subplots(nrows=2, figsize=(20, 10), sharex=True)
+    fig, axs = plt.subplots(nrows=3, figsize=(20, 10), sharex=True)
     info(verbose, "Crunching data...")
     user_type_wrt_issues(issues, metadata, axs[0])
     axs[0].legend(loc="upper right")
-    contributor_team_size(contributions, metadata, axs[1])
-    no_open_and_closed_issues(issues, metadata, axs[1])
-    date_highlights(readme_history, contents, metadata, axs[1])
+    contributor_team(contributions, metadata, axs[1:])
+    no_open_and_closed_issues(issues, metadata, axs[2])
+    date_highlights(readme_history, contents, metadata, axs[2])
     _, right = plt.xlim()
     plt.xlim(0, right+10)
-    axs[1].legend(loc="upper right")
+    axs[2].legend(loc="upper right")
     fig.suptitle(repo)
     s = repo.replace("/", "-")
     output_dir = "repo_timelines"
+    fig.tight_layout()
     os.makedirs(os.path.join(dir, output_dir), exist_ok=True)
     plt.savefig(os.path.join(dir, output_dir, f"{s}.png"), bbox_inches="tight")
     info(verbose, "Plot saved.")
