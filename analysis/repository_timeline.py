@@ -124,6 +124,24 @@ def no_open_and_closed_issues(issues, metadata, ax):
         # ylabel="count"
         )
     
+def engagement(forks, stars, metadata, ax):
+    forks_df = pd.merge(forks, metadata, on="github_user_cleaned_url")
+    forks_df["week_since_repo_creation"] = (forks_df.date - forks_df.created_at).dt.days // 7
+    forks_df = forks_df[["week_since_repo_creation", "user"]].groupby("week_since_repo_creation").count().rename(columns={"user": "no_forks"}).sort_index()
+    stars_df = pd.merge(stars, metadata, on="github_user_cleaned_url")
+    stars_df["week_since_repo_creation"] = (stars_df.date - stars_df.created_at).dt.days // 7
+    stars_df = stars_df[["week_since_repo_creation", "user"]].groupby("week_since_repo_creation").count().rename(columns={"user": "no_stars"}).sort_index()
+    end = (datetime.now(tz=timezone.utc) - metadata.created_at.iloc[0]).days // 7
+    x_data = pd.Series(np.arange(end), name="week_since_repo_creation")
+    engagement_df = pd.merge(x_data, forks_df, on="week_since_repo_creation", how="outer")
+    engagement_df = pd.merge(engagement_df, stars_df, on="week_since_repo_creation", how="outer").fillna(0)
+    engagement_df = engagement_df.set_index("week_since_repo_creation")
+    engagement_df = engagement_df.cumsum()
+    engagement_df.plot(
+        ax=ax,
+        lw=2
+    )
+    
 def date_highlights(readme_history, contents, metadata, ax):
     df = pd.merge(metadata, readme_history, on="github_user_cleaned_url")
     df.dropna(subset=["author_date"], inplace=True)
@@ -155,6 +173,7 @@ def main(repo, dir, verbose):
     axs[0].legend(loc="upper right")
     contributor_team(contributions, metadata, axs[1:])
     no_open_and_closed_issues(issues, metadata, axs[2])
+    engagement(forks, stars, metadata, axs[2])
     date_highlights(readme_history, contents, metadata, axs[2])
     _, right = plt.xlim()
     plt.xlim(0, right+10)
