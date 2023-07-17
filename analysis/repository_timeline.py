@@ -29,7 +29,15 @@ def analyse_headings(df):
     df["usage_addition"] = df.added_headings.str.contains("|".join(interesting_words["usage"]), case=False)
     return df
 
-def user_type_wrt_issues(issues, metadata, ax):
+def engagement_user_highlights(users, metadata, forks, stars, ax):
+    user_forks = pd.merge(forks[forks.user.isin(users)], metadata, on="github_user_cleaned_url")
+    user_forks["week_since_repo_creation"] = (user_forks.date - user_forks.created_at).dt.days // 7
+    user_stars = pd.merge(stars[stars.user.isin(users)], metadata, on="github_user_cleaned_url")
+    user_stars["week_since_repo_creation"] = (user_stars.date - user_stars.created_at).dt.days // 7
+    ax.scatter(user_forks.week_since_repo_creation, user_forks.user, marker="v", s=100, label="forked")
+    ax.scatter(user_stars.week_since_repo_creation, user_stars.user, marker="v", s=100, label="starred")
+
+def user_type_wrt_issues(issues, metadata, forks, stars, ax):
     # map dates to weeks
     merged_df = pd.merge(issues, metadata, on="github_user_cleaned_url", suffixes=(None,"_repo"))
     merged_df["created_at"] = (merged_df["created_at"] - merged_df["created_at_repo"]).dt.days // 7
@@ -64,8 +72,10 @@ def user_type_wrt_issues(issues, metadata, ax):
         s=500,
         )
     ax.set_ylabel("issue user")
+    users = np.unique(np.concatenate([issues.user.unique(), issues.closed_by.dropna().unique()]))
+    engagement_user_highlights(users, metadata, forks, stars, ax)
 
-def contributor_team(contributions, metadata, axs):
+def contributor_team(contributions, metadata, forks, stars, axs):
     # map dates to weeks
     contrib_df = pd.merge(metadata[["github_user_cleaned_url", "created_at"]], contributions)
     contrib_df["week_since_repo_creation"] = (contrib_df.week_co - contrib_df.created_at).dt.days // 7
@@ -86,6 +96,8 @@ def contributor_team(contributions, metadata, axs):
         s=500,
     )
     axs[0].set_ylabel("contributing user")
+    users = contributions.author.unique()
+    engagement_user_highlights(users, metadata, forks, stars, axs[0])
     # team size
     team_size = windowed_team_df.groupby(level="week_since_repo_creation")["active contributors"].value_counts()[:,True].reindex(windowed_team_df.index.levels[1], fill_value=0)
     # plot
@@ -152,18 +164,18 @@ def date_highlights(readme_history, contents, metadata, ax):
     # headings
     df = analyse_headings(df)
     ownership_added = df[df.ownership_addition].authored_in_week_since_creation
-    ax.scatter(ownership_added, (-1 * np.ones((len(ownership_added),))), marker="v", label="ownership heading")
+    ax.scatter(ownership_added, (-1 * np.ones((len(ownership_added),))), marker="v", s=100, label="ownership heading")
     usage_added = df[df.usage_addition].authored_in_week_since_creation
-    ax.scatter(usage_added, (-2 * np.ones((len(usage_added),))), marker="v", label="usage heading")
+    ax.scatter(usage_added, (-2 * np.ones((len(usage_added),))), marker="v", s=100, label="usage heading")
     # citation in README
     citation_added = df[(df.added_cites != "[]") & (df.added_cites.notna())]
-    ax.scatter(citation_added, (-3 * np.ones((len(citation_added),))), marker="v", label="citation in README")
+    ax.scatter(citation_added, (-3 * np.ones((len(citation_added),))), marker="v", s=100, label="citation in README")
     # citation file
     citation_file_added = contents_df[contents_df.citation_added.notna()]
-    ax.scatter(citation_file_added, (-4* np.ones((len(citation_file_added),))), marker="v", label="citation file")
+    ax.scatter(citation_file_added, (-4* np.ones((len(citation_file_added),))), marker="v", s=100, label="citation file")
     # contributing file
     contributing_file_added = contents_df[contents_df.contributing_added.notna()]
-    ax.scatter(contributing_file_added, (-5* np.ones((len(contributing_file_added),))), marker="v", label="contributing file")
+    ax.scatter(contributing_file_added, (-5* np.ones((len(contributing_file_added),))), marker="v", s=100, label="contributing file")
 
 def main(repo, dir, verbose):
     info(verbose, "Loading data...")
@@ -178,11 +190,12 @@ def main(repo, dir, verbose):
 
     fig, axs = plt.subplots(nrows=3, figsize=(20, 10), sharex=True)
     info(verbose, "Crunching data...")
-    user_type_wrt_issues(issues, metadata, axs[0])
+    user_type_wrt_issues(issues, metadata, forks, stars, axs[0])
     axs[0].legend(loc="upper right")
     axs[0].grid(True, axis="x")
-    contributor_team(contributions, metadata, axs[1:])
+    contributor_team(contributions, metadata, forks, stars, axs[1:])
     axs[1].grid(True, axis="x")
+    axs[1].legend()
     no_open_and_closed_issues(issues, metadata, axs[2])
     engagement(forks, stars, metadata, axs[2])
     date_highlights(readme_history, contents, metadata, axs[2])

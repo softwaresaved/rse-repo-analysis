@@ -78,6 +78,7 @@ Inside the environment, install the following packages:
 - `pydriller`
 - `wordcloud`
 - `seaborn`
+- `tol_colors`
 
 #### GitHub API
 
