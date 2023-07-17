@@ -72,14 +72,14 @@ def contributor_team(contributions, metadata, axs):
     team_df = contrib_df[["author", "week_since_repo_creation", "commits"]].set_index(["author", "week_since_repo_creation"]).sort_index()
     # user is active contributor if made at least one commit in last 12 weeks
     windowed_team_df = team_df.groupby(level="author").rolling(window=12, min_periods=0).sum().droplevel(0)
-    windowed_team_df["active contributor"] = windowed_team_df.commits > 0
+    windowed_team_df["active contributors"] = windowed_team_df.commits > 0
     # plot per-user status
     sns.scatterplot(
         ax=axs[0],
         data=windowed_team_df,
         x="week_since_repo_creation",
         y="author",
-        hue="active contributor",
+        hue="active contributors",
         hue_order=[False, True],
         palette=['#d62728', '#2ca02c'],
         marker="|",
@@ -87,7 +87,7 @@ def contributor_team(contributions, metadata, axs):
     )
     axs[0].set_ylabel("contributing user")
     # team size
-    team_size = windowed_team_df.groupby(level="week_since_repo_creation")["active contributor"].value_counts()[:,True].reindex(windowed_team_df.index.levels[1], fill_value=0)
+    team_size = windowed_team_df.groupby(level="week_since_repo_creation")["active contributors"].value_counts()[:,True].reindex(windowed_team_df.index.levels[1], fill_value=0)
     # plot
     team_size.plot(
         ax=axs[1],
@@ -127,10 +127,10 @@ def no_open_and_closed_issues(issues, metadata, ax):
 def engagement(forks, stars, metadata, ax):
     forks_df = pd.merge(forks, metadata, on="github_user_cleaned_url")
     forks_df["week_since_repo_creation"] = (forks_df.date - forks_df.created_at).dt.days // 7
-    forks_df = forks_df[["week_since_repo_creation", "user"]].groupby("week_since_repo_creation").count().rename(columns={"user": "no_forks"}).sort_index()
+    forks_df = forks_df[["week_since_repo_creation", "user"]].groupby("week_since_repo_creation").count().rename(columns={"user": "no forks"}).sort_index()
     stars_df = pd.merge(stars, metadata, on="github_user_cleaned_url")
     stars_df["week_since_repo_creation"] = (stars_df.date - stars_df.created_at).dt.days // 7
-    stars_df = stars_df[["week_since_repo_creation", "user"]].groupby("week_since_repo_creation").count().rename(columns={"user": "no_stars"}).sort_index()
+    stars_df = stars_df[["week_since_repo_creation", "user"]].groupby("week_since_repo_creation").count().rename(columns={"user": "no stars"}).sort_index()
     end = (datetime.now(tz=timezone.utc) - metadata.created_at.iloc[0]).days // 7
     x_data = pd.Series(np.arange(end), name="week_since_repo_creation")
     engagement_df = pd.merge(x_data, forks_df, on="week_since_repo_creation", how="outer")
@@ -146,19 +146,28 @@ def date_highlights(readme_history, contents, metadata, ax):
     df = pd.merge(metadata, readme_history, on="github_user_cleaned_url")
     df.dropna(subset=["author_date"], inplace=True)
     df["authored_in_week_since_creation"] = (df.author_date - df.created_at).dt.days // 7
+    contents_df = pd.merge(metadata, contents, on="github_user_cleaned_url")
+    contents_df.citation_added = (contents_df.citation_added - contents_df.created_at).dt.days // 7
+    contents_df.contributing_added = (contents_df.contributing_added - contents_df.created_at).dt.days // 7
     # headings
     df = analyse_headings(df)
     ownership_added = df[df.ownership_addition].authored_in_week_since_creation
-    ax.scatter(ownership_added, (-2 * np.ones((len(ownership_added),))), marker="v", label="ownership heading")
+    ax.scatter(ownership_added, (-1 * np.ones((len(ownership_added),))), marker="v", label="ownership heading")
     usage_added = df[df.usage_addition].authored_in_week_since_creation
-    ax.scatter(usage_added, (-1 * np.ones((len(usage_added),))), marker="v", label="usage heading")
+    ax.scatter(usage_added, (-2 * np.ones((len(usage_added),))), marker="v", label="usage heading")
     # citation in README
     citation_added = df[(df.added_cites != "[]") & (df.added_cites.notna())]
     ax.scatter(citation_added, (-3 * np.ones((len(citation_added),))), marker="v", label="citation in README")
+    # citation file
+    citation_file_added = contents_df[contents_df.citation_added.notna()]
+    ax.scatter(citation_file_added, (-4* np.ones((len(citation_file_added),))), marker="v", label="citation file")
+    # contributing file
+    contributing_file_added = contents_df[contents_df.contributing_added.notna()]
+    ax.scatter(contributing_file_added, (-5* np.ones((len(contributing_file_added),))), marker="v", label="contributing file")
 
 def main(repo, dir, verbose):
     info(verbose, "Loading data...")
-    contents = load_data(dir, "contents.csv", repo, "citation_added")
+    contents = load_data(dir, "contents.csv", repo, ["citation_added", "contributing_added"])
     contributions = load_data(dir, "contributions.csv", repo, "week_co")
     forks = load_data(dir, "forks.csv", repo, "date")
     issues = load_data(dir, "issues.csv", repo, ["created_at", "closed_at"])
@@ -171,13 +180,17 @@ def main(repo, dir, verbose):
     info(verbose, "Crunching data...")
     user_type_wrt_issues(issues, metadata, axs[0])
     axs[0].legend(loc="upper right")
+    axs[0].grid(True, axis="x")
     contributor_team(contributions, metadata, axs[1:])
+    axs[1].grid(True, axis="x")
     no_open_and_closed_issues(issues, metadata, axs[2])
     engagement(forks, stars, metadata, axs[2])
     date_highlights(readme_history, contents, metadata, axs[2])
-    _, right = plt.xlim()
-    plt.xlim(0, right+10)
     axs[2].legend(loc="upper right")
+    axs[2].grid(True)
+    _, right = plt.xlim()
+    plt.xlim(-5, right+15)
+    plt.xlabel("week since repository creation")
     fig.suptitle(repo)
     s = repo.replace("/", "-")
     output_dir = "repo_timelines"
