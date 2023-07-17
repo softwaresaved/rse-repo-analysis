@@ -76,7 +76,7 @@ def main(repo, date, domain, verbose):
     df.dropna(axis=0, subset=['pattern_cleaned_url'], inplace=True)
     if domain == "github.com":
         df["github_user_cleaned_url"] = df.apply(clean_by_user, args=("pattern_cleaned_url", verbose), axis=1)
-        df.drop_duplicates(subset=['title', 'author_for_reference', 'github_user_cleaned_url'], inplace=True)
+        #df.drop_duplicates(subset=['title', 'author_for_reference', 'github_user_cleaned_url'], inplace=True)
         df.dropna(axis=0, subset=['github_user_cleaned_url'], inplace=True)
     df.to_csv(f"../data/cleaned_urls_{repo}_{date}_{domain}.csv", index=False)
 
