@@ -25,6 +25,16 @@ def plot_license_type(contents, ax):
         xlabel="license type",
         ylabel="repository count"
     )
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
+
+def plot_contributing_file_present(contents, ax):
+    pd.notna(contents.contributing_added).value_counts().plot(
+        kind='bar',
+        ax=ax,
+        xlabel="contributing file",
+        ylabel="repository count"
+    )
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
 
 def plot_emojis(contents, ax):
     counts, bins = np.histogram(contents.readme_emojis, [0, 1, 2, 5, 10, contents.readme_emojis.max()])
@@ -38,10 +48,12 @@ def main(data_dir, verbose):
     contents = pd.read_csv(os.path.join(data_dir, "contents.csv"), index_col=0)
     
     info(verbose, "Plotting...")
-    fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
-    plot_license_type(contents, axs[0])
-    plot_emojis(contents, axs[1])
-    plt.savefig(os.path.join(data_dir, "overall.png"), bbox_inches="tight")
+    fig, axs = plt.subplots(ncols=2, nrows=2, figsize=(12, 12))
+    fig.tight_layout(h_pad=8, w_pad=5, rect=(0.05, 0.05, 0.95, 0.95))
+    plot_license_type(contents, axs[0][0])
+    plot_emojis(contents, axs[0][1])
+    plot_contributing_file_present(contents, axs[1][0])
+    plt.savefig(os.path.join(data_dir, "overall.png"))#, bbox_inches="tight")
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(
