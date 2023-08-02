@@ -118,7 +118,7 @@ def main(repo, date, local, verbose):
         get_paper_list(repo, date, path)
         if verbose:
             print("Downloaded XML list of publications.")
-    pdf_dict = {'title': [], 'author_for_reference': [], 'pdf_url': []}
+    pdf_dict = {'title': [], 'date': [], 'author_for_reference': [], 'pdf_url': []}
     for temp_dict in parse_pdf_urls(path):
         pdf_dict['title'] += temp_dict['title']
         pdf_dict['date'] += temp_dict['date']
