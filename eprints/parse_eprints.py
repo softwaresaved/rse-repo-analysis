@@ -91,6 +91,7 @@ def parse_pdf_urls(path):
     for c in children:
         urls = []
         title = get_specific_fields_content(c, "title")[0]
+        date = get_specific_fields_content(c, "date")[0]
         creators = get_specific_fields_elements(c, "creators")
         try:
             author_for_reference = get_specific_fields_elements(get_specific_fields_elements(creators[0], "item")[0], "name")[0]
@@ -109,7 +110,7 @@ def parse_pdf_urls(path):
                         urls += get_specific_fields_content(file, "url")
         if len(urls) > 0:  # NOTE: can sometimes include jpegs, docx etc.
             n = len(urls)
-            yield {"title": [title for _ in range(n)], "url": urls, "author_for_reference": [author_name_for_reference for _ in range(n)]}
+            yield {"title": [title for _ in range(n)], "date": [date for _ in range(n)], "url": urls, "author_for_reference": [author_name_for_reference for _ in range(n)]}
 
 def main(repo, date, local, verbose):
     path = f"../data/export_{repo}_{date}.xml"
@@ -120,6 +121,7 @@ def main(repo, date, local, verbose):
     pdf_dict = {'title': [], 'author_for_reference': [], 'pdf_url': []}
     for temp_dict in parse_pdf_urls(path):
         pdf_dict['title'] += temp_dict['title']
+        pdf_dict['date'] += temp_dict['date']
         pdf_dict['author_for_reference'] += temp_dict['author_for_reference']
         pdf_dict['pdf_url'] += temp_dict['url']
     if verbose:
