@@ -19,12 +19,19 @@ def plot_license_type(contents, ax):
         contents.license.isin(permissive_licenses), "permissive", np.where(
         contents.license == "None", "None", np.where(
         contents.license == "other", "unknown", "non-permissive")))
-    contents.license_type.value_counts().plot(
+    contents.license_type.value_counts().sort_index().plot(
         kind='bar',
         ax=ax,
         xlabel="license type",
-        ylabel="count"
+        ylabel="repository count"
     )
+
+def plot_emojis(contents, ax):
+    counts, bins = np.histogram(contents.readme_emojis, [0, 1, 2, 5, 10, contents.readme_emojis.max()])
+    binlabels = [f"[{bins[i]} - {bins[i+1]})" for i in range(len(bins)-2)]
+    binlabels += [f"[{bins[-2]} - {bins[-1]}]"]
+    ax.bar(binlabels, counts)
+    ax.set(xlabel="number of emojis in README", ylabel="repository count")
 
 def main(data_dir, verbose):
     info(verbose, "Loading data...")
@@ -33,6 +40,7 @@ def main(data_dir, verbose):
     info(verbose, "Plotting...")
     fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
     plot_license_type(contents, axs[0])
+    plot_emojis(contents, axs[1])
     plt.savefig(os.path.join(data_dir, "overall.png"), bbox_inches="tight")
 
 if __name__=="__main__":
