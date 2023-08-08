@@ -147,3 +147,5 @@ data/analysis/eprints_pub
 !data/eprints_repos.txt
 !data/analysis
 !analysis/*
+!data/analysis/overall/*.png
+#!data/analysis/repo_timelines/*/*.png
