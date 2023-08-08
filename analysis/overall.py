@@ -35,6 +35,7 @@ def plot_contributing_file_present(contents, ax):
         xlabel="contributing file",
         ylabel="repository count"
     )
+    ax.bar_label(ax.containers[0])
     ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
 
 def plot_emojis(contents, ax):
@@ -78,7 +79,7 @@ def main(data_dir, verbose):
     plot_contributing_file_present(contents, axs[1][0])
     plot_team_size(metadata, contributions, axs[1][1])
     plt.suptitle("Overall statistics for ePrints repositories")
-    plt.savefig(os.path.join(data_dir, "overall.png"))#, bbox_inches="tight")
+    plt.savefig(os.path.join(data_dir, "overall", "overall.png"))#, bbox_inches="tight")
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(
