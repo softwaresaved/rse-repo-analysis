@@ -103,25 +103,49 @@ Of course, this separation disregards that some repositories are developed by te
 
 <img src="./repo_timelines/one_user/andrewtarzia-cage_datasets.png" width="800"/>
 <img src="./repo_timelines/one_user/AshwathyTR-IDN-Sum.png" width="800"/>
+
+This one is interesting: It seems to have a README with essential information, but very low interest. It might be a data repository rather than code? It doesn't seem to make use of issues much though, even though commits are happening.
+
 <img src="./repo_timelines/one_user/asolimando-logmap-conservativity.png" width="800"/>
 <img src="./repo_timelines/one_user/bernuly-VCSimulinkTlbx.png" width="800"/>
+
+What happens in the second contribution spike?
+
 <img src="./repo_timelines/one_user/cylammarco-ASPIRED-example.png" width="800"/>
+
+Two forks, active contribution by the owner throughout, but no issues, so no pull requests. What happens in those forks? Would a CONTRIBUTING file help?
+
 <img src="./repo_timelines/one_user/cylammarco-bhtomspec.png" width="800"/>
 <img src="./repo_timelines/one_user/eghbal11-Eghbal.png" width="800"/>
+
+Active contribution for a longer period than expected, what sort of changes are implemented?
+
 <img src="./repo_timelines/one_user/ethanwharris-foveated-convolutions.png" width="800"/>
+
+"Lots" of stars, but nothing else. Could a README or CONTRIBUTING have helped?
+
 <img src="./repo_timelines/one_user/eugenesiow-piotre.png" width="800"/>
 <img src="./repo_timelines/one_user/fcampelo-epitopes.png" width="800"/>
 <img src="./repo_timelines/one_user/fcampelo-OrgSpec-paper.png" width="800"/>
 <img src="./repo_timelines/one_user/gamesbyangelina-danesh.png" width="800"/>
+
+Now, these are lots of stars! And a number of forks, too. But no README or CONTRIBUTING. Can we find repos with similar amounts of stars that manage to get contributors? Why were no issues opened?
+
 <img src="./repo_timelines/one_user/ilkaza-JPAL-HA.png" width="800"/>
 <img src="./repo_timelines/one_user/JAEarly-MILLI.png" width="800"/>
 <img src="./repo_timelines/one_user/Katerina-Pap-MA-cont-shiny-app.png" width="800"/>
 <img src="./repo_timelines/one_user/lphowell-Geothermal-Modelling.png" width="800"/>
+
+Multiple forks, why?
+
 <img src="./repo_timelines/one_user/NabajeetBarman-GamingHDRVideoSET.png" width="800"/>
 <img src="./repo_timelines/one_user/oreindt-routes-rumours-ml3.png" width="800"/>
 <img src="./repo_timelines/one_user/P-R-McWhirter-pyOsiris.png" width="800"/>
 <img src="./repo_timelines/one_user/pbw20-SULISO_manuals.png" width="800"/>
 <img src="./repo_timelines/one_user/philgooch-BADREX-Biomedical-Abbreviation-Expander.png" width="800"/>
+
+What's the difference between this and repos with no stars?
+
 <img src="./repo_timelines/one_user/SamirNepal-Li_CNN_2022.png" width="800"/>
 <img src="./repo_timelines/one_user/sanket0707-GNN-Mixer.png" width="800"/>
 <img src="./repo_timelines/one_user/SigmaLabResearch-Visnotate.png" width="800"/>
@@ -134,11 +158,21 @@ Of course, this separation disregards that some repositories are developed by te
 
 ##### High-interest repositories
 
+These don't seem to have a CONTRIBUTING file. Are the new contributors team members that take over the project? Are they new people with pull requests?
+
 <img src="./repo_timelines/many_users/agentsoz-bdi-abm-integration.png" width="800"/>
 <img src="./repo_timelines/many_users/IraKorshunova-folk-rnn.png" width="800"/>
 <img src="./repo_timelines/many_users/morriscb-The-wiZZ.png" width="800"/>
+
+Looks to me like jvdb is a new contributor.
+
 <img src="./repo_timelines/many_users/tharindudr-transquest.png" width="800"/>
+
+Owner seems very active, maybe that's why all the people interacting with issues aren't contributing?
+
 <img src="./repo_timelines/many_users/ziqizhang-sti.png" width="800"/>
+
+This looks abandoned - issues are opened but nothing happens. Users also don't fork the repo though?
 
 ##### In between
 
@@ -150,6 +184,9 @@ Of course, this separation disregards that some repositories are developed by te
 <img src="./repo_timelines/inbetween/epsilonlabs-emf-cbp.png" width="800"/>
 <img src="./repo_timelines/inbetween/fcampelo-MOEADr.png" width="800"/>
 <img src="./repo_timelines/inbetween/FlorianSteinberg-incone.png" width="800"/>
+
+Why is the owner closing issues, but not contributing?
+
 <img src="./repo_timelines/inbetween/jordan-bird-synthetic-fruit-image-generator.png" width="800"/>
 <img src="./repo_timelines/inbetween/lushv-geolabel-service.png" width="800"/>
 <img src="./repo_timelines/inbetween/mhinsch-RRGraphs_mini.png" width="800"/>
@@ -161,7 +198,17 @@ Of course, this separation disregards that some repositories are developed by te
 <img src="./repo_timelines/inbetween/rOpenHealth-ClinicalCodes.png" width="800"/>
 <img src="./repo_timelines/inbetween/SigmaLabResearch-Gaze-Enabled-Histopathology.png" width="800"/>
 <img src="./repo_timelines/inbetween/survival-lumc-ValidationCompRisks.png" width="800"/>
+
+Looks like a team effort that picked up late.
+
 <img src="./repo_timelines/inbetween/tstafylakis-Lipreading-ResNet.png" width="800"/>
+
+Lots of forks, no new contributors.
+
 <img src="./repo_timelines/inbetween/vangiel-WheresTheFellow.png" width="800"/>
 <img src="./repo_timelines/inbetween/vraj004-RyR-simulator.png" width="800"/>
 <img src="./repo_timelines/inbetween/zdai257-DeepAoANet.png" width="800"/>
+
+##### Thoughts
+
+There are a few repos with high number of stars and decent number of forks that do not have any new contributors. None of the repos seem to use issues a lot, mostly for bug fixing (i.e. open shortly)? Maybe people are more inclined to contribute with a CONTRIBUTING file and some inviting tags like "good first issue" etc.
