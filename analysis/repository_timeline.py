@@ -168,13 +168,13 @@ def date_highlights(readme_history, contents, metadata, ax):
     usage_added = df[df.usage_addition].authored_in_week_since_creation
     ax.scatter(usage_added, (-2 * np.ones((len(usage_added),))), marker="v", s=100, label="usage heading")
     # citation in README
-    citation_added = df[(df.added_cites != "[]") & (df.added_cites.notna())]
+    citation_added = df[(df.added_cites != "[]") & (df.added_cites.notna())].authored_in_week_since_creation
     ax.scatter(citation_added, (-3 * np.ones((len(citation_added),))), marker="v", s=100, label="citation in README")
     # citation file
-    citation_file_added = contents_df[contents_df.citation_added.notna()]
+    citation_file_added = contents_df[contents_df.citation_added.notna()].citation_added
     ax.scatter(citation_file_added, (-4* np.ones((len(citation_file_added),))), marker="v", s=100, label="citation file")
     # contributing file
-    contributing_file_added = contents_df[contents_df.contributing_added.notna()]
+    contributing_file_added = contents_df[contents_df.contributing_added.notna()].contributing_added
     ax.scatter(contributing_file_added, (-5* np.ones((len(contributing_file_added),))), marker="v", s=100, label="contributing file")
 
 def main(repo, dir, verbose):
@@ -187,6 +187,10 @@ def main(repo, dir, verbose):
     readme_history = load_data(dir, "readme_history.csv", repo, "author_date")
     stars = load_data(dir, "stars.csv", repo, "date")
     info(verbose, "Data loading complete.")
+
+    if len(metadata) == 0:
+        info(verbose, f"Not enough data available for {repo}.")
+        exit()
 
     fig, axs = plt.subplots(nrows=3, figsize=(20, 10), sharex=True)
     info(verbose, "Crunching data...")
@@ -206,7 +210,7 @@ def main(repo, dir, verbose):
     plt.xlabel("week since repository creation")
     fig.suptitle(repo)
     s = repo.replace("/", "-")
-    output_dir = "repo_timelines"
+    output_dir = "repo_timelines/true_positives"
     fig.tight_layout()
     os.makedirs(os.path.join(dir, output_dir), exist_ok=True)
     plt.savefig(os.path.join(dir, output_dir, f"{s}.png"), bbox_inches="tight")

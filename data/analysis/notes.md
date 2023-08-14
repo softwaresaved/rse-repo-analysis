@@ -56,7 +56,7 @@
 - `closed_at`: date the issue was closed (can be empty)
 - `closed_by`: user ID of user who closed the issue (can be empty)
 
-[GitHub repository README evolution](./readme_history.csv):
+[GitHub repository README evolution](./readme_history.csv) (note that this only parsed headings beginning with "#", not those with "===" underneath):
 - `github_user_cleaned_url`: repository ID (format `<user>/<repo_name>`)
 - `readme_path`: path to README file (usually `./README.md`)
 - `author_date`: date of commit to README
@@ -86,129 +86,166 @@
 
 ### GitHub
 
-<img src="./overall/overall.png" width="800"/>
+<img src="./overall/overall_true_positives.png" width="800"/>
+
+<img src="./overall/overall_false_positives.png" width="800"/>
 
 #### Repository timelines
 
 Timelines were plotted for each repository mentioned on the first two pages of the publication that was manually verified as the code for this publication ("true positives"). The upper plot shows how users interact with repository issues. We take a rolling window approach, where a user is considered to be opening issues up until 12 weeks after opening an issue, similarly for closing issues. The middle plot shows the same analysis for contributions (i.e. commits). The last plot shows summary statistics over time, such as forks, stars and contributor team size. Highlights are depicted with little triangles.
 
 We can roughly separate the repositories into three groups: 
-- one-person repositories, where only one user makes contributions and interacts with issues (30 repositories)
-- high-interest repositories, where many (>5 I think, this was decided visually) users contribute and interact with issues (5 repositories)
-- everything in between (23 repositories).
+- one-person repositories, where only one user makes contributions and interacts with issues (34 repositories)
+- high-interest repositories, where many (>5 I think, this was decided visually) users contribute and interact with issues (11 repositories)
+- everything in between (30 repositories).
 
 Of course, this separation disregards that some repositories are developed by teams rather than just one person and that this might be the reason for the "high interest", but it's just a starting point, not a result.
 
 ##### One-person repositories
 
-<img src="./repo_timelines/one_user/andrewtarzia-cage_datasets.png" width="800"/>
-<img src="./repo_timelines/one_user/AshwathyTR-IDN-Sum.png" width="800"/>
+<img src="./overall/overall_one_person.png" width="800"/>
+
+<img src="./repo_timelines/true_positives/one_user/AlexTS1980-COVID-Single-Shot-Model.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/andrewtarzia-cage_datasets.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/AshwathyTR-IDN-Sum.png" width="800"/>
 
 This one is interesting: It seems to have a README with essential information, but very low interest. It might be a data repository rather than code? It doesn't seem to make use of issues much though, even though commits are happening.
 
-<img src="./repo_timelines/one_user/asolimando-logmap-conservativity.png" width="800"/>
-<img src="./repo_timelines/one_user/bernuly-VCSimulinkTlbx.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/asolimando-logmap-conservativity.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/bernuly-VCSimulinkTlbx.png" width="800"/>
 
 What happens in the second contribution spike?
 
-<img src="./repo_timelines/one_user/cylammarco-ASPIRED-example.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/cylammarco-ASPIRED-example.png" width="800"/>
 
 Two forks, active contribution by the owner throughout, but no issues, so no pull requests. What happens in those forks? Would a CONTRIBUTING file help?
 
-<img src="./repo_timelines/one_user/cylammarco-bhtomspec.png" width="800"/>
-<img src="./repo_timelines/one_user/eghbal11-Eghbal.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/cylammarco-bhtomspec.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/eghbal11-Eghbal.png" width="800"/>
 
 Active contribution for a longer period than expected, what sort of changes are implemented?
 
-<img src="./repo_timelines/one_user/ethanwharris-foveated-convolutions.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/ethanwharris-foveated-convolutions.png" width="800"/>
 
-"Lots" of stars, but nothing else. Could a README or CONTRIBUTING have helped?
+"Lots" of stars, but nothing else. Could an informative README or CONTRIBUTING have helped?
 
-<img src="./repo_timelines/one_user/eugenesiow-piotre.png" width="800"/>
-<img src="./repo_timelines/one_user/fcampelo-epitopes.png" width="800"/>
-<img src="./repo_timelines/one_user/fcampelo-OrgSpec-paper.png" width="800"/>
-<img src="./repo_timelines/one_user/gamesbyangelina-danesh.png" width="800"/>
+README is in fact pretty empty, but paper was presented at NeurIPS workshop, which is probably why it has so many stars.
+
+<img src="./repo_timelines/true_positives/one_user/eugenesiow-piotre.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/fcampelo-epitopes.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/fcampelo-OrgSpec-paper.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/gamesbyangelina-danesh.png" width="800"/>
 
 Now, these are lots of stars! And a number of forks, too. But no README or CONTRIBUTING. Can we find repos with similar amounts of stars that manage to get contributors? Why were no issues opened?
 
-<img src="./repo_timelines/one_user/ilkaza-JPAL-HA.png" width="800"/>
-<img src="./repo_timelines/one_user/JAEarly-MILLI.png" width="800"/>
-<img src="./repo_timelines/one_user/Katerina-Pap-MA-cont-shiny-app.png" width="800"/>
-<img src="./repo_timelines/one_user/lphowell-Geothermal-Modelling.png" width="800"/>
+Really nothing, and the README is more or less empty. It points to a website though, which also links the paper. Can't check the forks because they are too old.
+
+<img src="./repo_timelines/true_positives/one_user/ilkaza-JPAL-HA.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/JAEarly-MILLI.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/JZhao12-CVML-Pose.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/Katerina-Pap-MA-cont-shiny-app.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/lphowell-Geothermal-Modelling.png" width="800"/>
 
 Multiple forks, why?
 
-<img src="./repo_timelines/one_user/NabajeetBarman-GamingHDRVideoSET.png" width="800"/>
-<img src="./repo_timelines/one_user/oreindt-routes-rumours-ml3.png" width="800"/>
-<img src="./repo_timelines/one_user/P-R-McWhirter-pyOsiris.png" width="800"/>
-<img src="./repo_timelines/one_user/pbw20-SULISO_manuals.png" width="800"/>
-<img src="./repo_timelines/one_user/philgooch-BADREX-Biomedical-Abbreviation-Expander.png" width="800"/>
+Forks are inactive. 
+
+<img src="./repo_timelines/true_positives/one_user/NabajeetBarman-GamingHDRVideoSET.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/oreindt-routes-rumours-ml3.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/P-R-McWhirter-pyOsiris.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/pbw20-SULISO_manuals.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/philgooch-BADREX-Biomedical-Abbreviation-Expander.png" width="800"/>
 
 What's the difference between this and repos with no stars?
 
-<img src="./repo_timelines/one_user/SamirNepal-Li_CNN_2022.png" width="800"/>
-<img src="./repo_timelines/one_user/sanket0707-GNN-Mixer.png" width="800"/>
-<img src="./repo_timelines/one_user/SigmaLabResearch-Visnotate.png" width="800"/>
-<img src="./repo_timelines/one_user/sjoudaki-cfhtlens_revisited.png" width="800"/>
-<img src="./repo_timelines/one_user/stootaghaj-DEMI.png" width="800"/>
-<img src="./repo_timelines/one_user/TGMclustering-TGMclustering.png" width="800"/>
-<img src="./repo_timelines/one_user/WavEC-Offshore-Renewables-tokyo-wavec-fowt.png" width="800"/>
-<img src="./repo_timelines/one_user/xgfd-ASPG.png" width="800"/>
-<img src="./repo_timelines/one_user/xiongbo010-QGCN.png" width="800"/>
+It has an informative README and a licence. The forks are inactive though.
+
+<img src="./repo_timelines/true_positives/one_user/SamirNepal-Li_CNN_2022.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/sanket0707-GNN-Mixer.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/SigmaLabResearch-Visnotate.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/sjoudaki-cfhtlens_revisited.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/stootaghaj-DEMI.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/stuartemiddleton-glosat_table_dataset.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/TGMclustering-TGMclustering.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/UoS-EEC-INET-opportunistic-routing.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/WavEC-Offshore-Renewables-tokyo-wavec-fowt.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/xgfd-ASPG.png" width="800"/>
+<img src="./repo_timelines/true_positives/one_user/xiongbo010-QGCN.png" width="800"/>
 
 ##### High-interest repositories
 
+<img src="./overall/overall_high_interest.png" width="800"/>
+
 These don't seem to have a CONTRIBUTING file. Are the new contributors team members that take over the project? Are they new people with pull requests?
 
-<img src="./repo_timelines/many_users/agentsoz-bdi-abm-integration.png" width="800"/>
-<img src="./repo_timelines/many_users/IraKorshunova-folk-rnn.png" width="800"/>
-<img src="./repo_timelines/many_users/morriscb-The-wiZZ.png" width="800"/>
+<img src="./repo_timelines/true_positives/many_users/agentsoz-bdi-abm-integration.png" width="800"/>
+<img src="./repo_timelines/true_positives/many_users/esbmc-esbmc.png" width="800"/>
+<img src="./repo_timelines/true_positives/many_users/ieee8023-covid-chestxray-dataset.png" width="800"/>
+<img src="./repo_timelines/true_positives/many_users/IraKorshunova-folk-rnn.png" width="800"/>
+<img src="./repo_timelines/true_positives/many_users/MAMEM-GazeTheWeb.png" width="800"/>
+<img src="./repo_timelines/true_positives/many_users/masakhane-io-masakhane-news.png" width="800"/>
+<img src="./repo_timelines/true_positives/many_users/nilmtk-nilmtk.png" width="800"/>
+<img src="./repo_timelines/true_positives/many_users/morriscb-The-wiZZ.png" width="800"/>
 
 Looks to me like jvdb is a new contributor.
 
-<img src="./repo_timelines/many_users/tharindudr-transquest.png" width="800"/>
+<img src="./repo_timelines/true_positives/many_users/s-goldman-Dusty-Evolved-Star-Kit.png" width="800"/>
+<img src="./repo_timelines/true_positives/many_users/tharindudr-transquest.png" width="800"/>
 
 Owner seems very active, maybe that's why all the people interacting with issues aren't contributing?
 
-<img src="./repo_timelines/many_users/ziqizhang-sti.png" width="800"/>
+<img src="./repo_timelines/true_positives/many_users/ziqizhang-sti.png" width="800"/>
 
-This looks abandoned - issues are opened but nothing happens. Users also don't fork the repo though?
+Lots of opening and closing issues when no contributions happen?
 
 ##### In between
 
-<img src="./repo_timelines/inbetween/52North-GEO-label-java.png" width="800"/>
-<img src="./repo_timelines/inbetween/brunneis-ilab-erisk-2020.png" width="800"/>
-<img src="./repo_timelines/inbetween/CVML-UCLan-FCBFormer.png" width="800"/>
-<img src="./repo_timelines/inbetween/ecs-vlc-opponency.png" width="800"/>
-<img src="./repo_timelines/inbetween/EPiCS-CamSim.png" width="800"/>
-<img src="./repo_timelines/inbetween/epsilonlabs-emf-cbp.png" width="800"/>
-<img src="./repo_timelines/inbetween/fcampelo-MOEADr.png" width="800"/>
-<img src="./repo_timelines/inbetween/FlorianSteinberg-incone.png" width="800"/>
+<img src="./overall/overall_in_between.png" width="800"/>
+
+<img src="./repo_timelines/true_positives/inbetween/52North-GEO-label-java.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/abel-research-openlimb.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/brunneis-ilab-erisk-2020.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/cs-chan-Deep-Plant.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/CVML-UCLan-FCBFormer.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/ecs-vlc-opponency.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/EPiCS-CamSim.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/epsilonlabs-emf-cbp.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/fcampelo-MOEADr.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/fchirono-amiet_tools.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/FlorianSteinberg-incone.png" width="800"/>
 
 Why is the owner closing issues, but not contributing?
 
-<img src="./repo_timelines/inbetween/jordan-bird-synthetic-fruit-image-generator.png" width="800"/>
-<img src="./repo_timelines/inbetween/lushv-geolabel-service.png" width="800"/>
-<img src="./repo_timelines/inbetween/mhinsch-RRGraphs_mini.png" width="800"/>
-<img src="./repo_timelines/inbetween/NeuroanatomyAndConnectivity-broca.png" width="800"/>
-<img src="./repo_timelines/inbetween/NeuroanatomyAndConnectivity-nki_nilearn.png" width="800"/>
-<img src="./repo_timelines/inbetween/PRiME-project-PRiME-Framework.png" width="800"/>
-<img src="./repo_timelines/inbetween/prov-suite-prov-sty.png" width="800"/>
-<img src="./repo_timelines/inbetween/quitadal-EPINETLAB.png" width="800"/>
-<img src="./repo_timelines/inbetween/rOpenHealth-ClinicalCodes.png" width="800"/>
-<img src="./repo_timelines/inbetween/SigmaLabResearch-Gaze-Enabled-Histopathology.png" width="800"/>
-<img src="./repo_timelines/inbetween/survival-lumc-ValidationCompRisks.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/intelaligent-tctb.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/jordan-bird-synthetic-fruit-image-generator.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/kecskemeti-dissect-cf.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/lushv-geolabel-service.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/mhinsch-RRGraphs_mini.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/NeuroanatomyAndConnectivity-broca.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/NeuroanatomyAndConnectivity-nki_nilearn.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/ok1zjf-lbae.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/PRiME-project-PRiME-Framework.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/prov-suite-prov-sty.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/quitadal-EPINETLAB.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/rOpenHealth-ClinicalCodes.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/SigmaLabResearch-Gaze-Enabled-Histopathology.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/survival-lumc-ValidationCompRisks.png" width="800"/>
 
 Looks like a team effort that picked up late.
 
-<img src="./repo_timelines/inbetween/tstafylakis-Lipreading-ResNet.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/tstafylakis-Lipreading-ResNet.png" width="800"/>
 
 Lots of forks, no new contributors.
 
-<img src="./repo_timelines/inbetween/vangiel-WheresTheFellow.png" width="800"/>
-<img src="./repo_timelines/inbetween/vraj004-RyR-simulator.png" width="800"/>
-<img src="./repo_timelines/inbetween/zdai257-DeepAoANet.png" width="800"/>
+The README is quite long, and it's also an ML project. I get the feeling that ML project get higher engagement by default? 2 of the forks were updated at some point.
+
+<img src="./repo_timelines/true_positives/inbetween/vangiel-WheresTheFellow.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/vraj004-RyR-simulator.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/yoqim-TBLD.png" width="800"/>
+<img src="./repo_timelines/true_positives/inbetween/zdai257-DeepAoANet.png" width="800"/>
 
 ##### Thoughts
 
 There are a few repos with high number of stars and decent number of forks that do not have any new contributors. None of the repos seem to use issues a lot, mostly for bug fixing (i.e. open shortly)? Maybe people are more inclined to contribute with a CONTRIBUTING file and some inviting tags like "good first issue" etc.
+
+ML repos might lead to higher engagement per default, I think (haven't validated) that the one-person repos with some engagement usually had to do with ML.
