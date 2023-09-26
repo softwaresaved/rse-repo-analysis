@@ -70,7 +70,7 @@ def plot_team_size(metadata, contributions, ax):
     # team size
     team_size = windowed_team_df.groupby(level=["github_user_cleaned_url", "week_since_repo_creation"])["active contributors"].value_counts()[:,:,True]
     max_team_size = team_size.groupby(level="github_user_cleaned_url").max()
-    bins = [0, 1, 2, 5, 10]
+    bins = [1, 2, 5, 10]
     if max_team_size.max() > bins[-1]:
         bins.append(max_team_size.max())
     counts, bins = np.histogram(max_team_size, bins)

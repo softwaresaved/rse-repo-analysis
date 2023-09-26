@@ -90,6 +90,14 @@
 
 <img src="./overall/overall_false_positives.png" width="800"/>
 
+#### License types and team sizes
+
+<img src="./overall/license_type_per_team_size.png" width="800"/>
+
+<img src="./overall/team_size_per_license_type.png" width="800"/>
+
+1-person teams tend to have no license. Permissive licenses are more common than non-permissive throughout.
+
 #### Repository timelines
 
 Timelines were plotted for each repository mentioned on the first two pages of the publication that was manually verified as the code for this publication ("true positives"). The upper plot shows how users interact with repository issues. We take a rolling window approach, where a user is considered to be opening issues up until 12 weeks after opening an issue, similarly for closing issues. The middle plot shows the same analysis for contributions (i.e. commits). The last plot shows summary statistics over time, such as forks, stars and contributor team size. Highlights are depicted with little triangles.
