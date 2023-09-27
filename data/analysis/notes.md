@@ -113,6 +113,8 @@ Of course, this separation disregards that some repositories are developed by te
 
 <img src="./overall/overall_one_person.png" width="800"/>
 
+READMEs tend to be informative, but largest proportion of less informative READMEs in this category.
+
 <img src="./repo_timelines/true_positives/one_user/AlexTS1980-COVID-Single-Shot-Model.png" width="800"/>
 <img src="./repo_timelines/true_positives/one_user/andrewtarzia-cage_datasets.png" width="800"/>
 <img src="./repo_timelines/true_positives/one_user/AshwathyTR-IDN-Sum.png" width="800"/>
@@ -185,6 +187,8 @@ It has an informative README and a licence. The forks are inactive though.
 <img src="./overall/overall_high_interest.png" width="800"/>
 
 These don't seem to have a CONTRIBUTING file. Are the new contributors team members that take over the project? Are they new people with pull requests?
+
+Best READMEs across the board.
 
 <img src="./repo_timelines/true_positives/many_users/agentsoz-bdi-abm-integration.png" width="800"/>
 <img src="./repo_timelines/true_positives/many_users/esbmc-esbmc.png" width="800"/>

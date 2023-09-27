@@ -80,17 +80,22 @@ def plot_team_size(metadata, contributions, ax):
     ax.bar_label(ax.containers[0])
     ax.set(xlabel="maximum team size", ylabel="repository count")
 
-def plot_readme_size(contents, ax):
-    bins = [0, 1, 5000, 10000, 50000]
+def plot_readme_size(contents, ax, type="bar"):
+    bins = [0, 1, 300, 1500, 10000]
+    binmeanings = ["none", "ultra-short", "short", "informative", "detailed"]
     if contents.readme_size.max() > bins[-1]:
         bins.append(contents.readme_size.max())
     counts, bins = np.histogram(contents.readme_size, bins)
-    binlabels = [f"[{bins[i]} - {bins[i+1]})" for i in range(len(bins)-2)]
-    binlabels += [f"[{bins[-2]} - {bins[-1]}]"]
-    ax.bar(binlabels, counts)
-    ax.bar_label(ax.containers[0])
-    ax.tick_params(axis='x', labelrotation=45)
-    ax.set(xlabel="size of README in Bytes", ylabel="repository count")
+    binlabels = [f"{binmeanings[i]}\n[{bins[i]} - {bins[i+1]})" for i in range(len(bins)-2)]
+    binlabels += [f"{binmeanings[-1]}\n[{bins[-2]} - {bins[-1]}]"]
+    if type=="bar":
+        ax.bar(binlabels, counts)
+        ax.bar_label(ax.containers[0])
+        ax.tick_params(axis='x', labelrotation=45)
+        ax.set(xlabel="size of README in Bytes", ylabel="repository count")
+    elif type=="pie":
+        ax.pie(counts, labels=binlabels, autopct='%1.1f%%')
+        ax.set(xlabel="size of README in Bytes")
 
 def plot_headings(readme_df, ax):
     headings = []
@@ -137,7 +142,7 @@ def main(data_dir, verbose, filter_path, tag):
     plot_emojis(contents, axs[0][1])
     plot_contributing_file_present(contents, axs[1][0])
     plot_team_size(metadata, contributions, axs[1][1])
-    plot_readme_size(contents, axs[0][2])
+    plot_readme_size(contents, axs[0][2], type="pie")
     plot_headings(readme_df, axs[1][2])
     if tag:
         plt.suptitle(f"Overall statistics for ePrints repositories ({tag})")
