@@ -154,31 +154,47 @@ def engagement(forks, stars, metadata, ax):
         lw=2
     )
     
-def date_highlights(readme_history, contents, metadata, ax):
+def date_highlights(readme_history, contents, metadata, paper_data, ax):
     df = pd.merge(metadata, readme_history, on="github_user_cleaned_url")
     df.dropna(subset=["author_date"], inplace=True)
     df["authored_in_week_since_creation"] = (df.author_date - df.created_at).dt.days // 7
     contents_df = pd.merge(metadata, contents, on="github_user_cleaned_url")
     contents_df.citation_added = (contents_df.citation_added - contents_df.created_at).dt.days // 7
     contents_df.contributing_added = (contents_df.contributing_added - contents_df.created_at).dt.days // 7
+    paper_df = pd.merge(metadata, paper_data, on="github_user_cleaned_url")
+    paper_df.date = (paper_df.date - paper_df.created_at).dt.days // 7
     # headings
     df = analyse_headings(df)
+    # plotting
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+    max_y = ax.get_ylim()[1]
+    dist = max_y/25
     ownership_added = df[df.ownership_addition].authored_in_week_since_creation
-    ax.scatter(ownership_added, (-1 * np.ones((len(ownership_added),))), marker="v", s=100, label="ownership heading")
+    ax.vlines(ownership_added, -1*dist, max_y, linestyles='dashed', color=colors[0])
+    ax.scatter(ownership_added, (-1*dist * np.ones((len(ownership_added),))), marker=10, s=100, label="ownership heading", color=colors[0])
     usage_added = df[df.usage_addition].authored_in_week_since_creation
-    ax.scatter(usage_added, (-2 * np.ones((len(usage_added),))), marker="v", s=100, label="usage heading")
+    ax.vlines(usage_added, -2*dist, max_y, linestyles='dashed', color=colors[1])
+    ax.scatter(usage_added, (-2*dist * np.ones((len(usage_added),))), marker=10, s=100, label="usage heading", color=colors[1])
     # citation in README
     citation_added = df[(df.added_cites != "[]") & (df.added_cites.notna())].authored_in_week_since_creation
-    ax.scatter(citation_added, (-3 * np.ones((len(citation_added),))), marker="v", s=100, label="citation in README")
+    ax.vlines(citation_added, -3*dist, max_y, linestyles='dashed', color=colors[2])
+    ax.scatter(citation_added, (-3*dist * np.ones((len(citation_added),))), marker=10, s=100, label="citation in README", color=colors[2])
     # citation file
     citation_file_added = contents_df[contents_df.citation_added.notna()].citation_added
-    ax.scatter(citation_file_added, (-4* np.ones((len(citation_file_added),))), marker="v", s=100, label="citation file")
+    ax.vlines(citation_file_added, -4*dist, max_y, linestyles='dashed', color=colors[3])
+    ax.scatter(citation_file_added, (-4*dist* np.ones((len(citation_file_added),))), marker=10, s=100, label="citation file", color=colors[3])
     # contributing file
     contributing_file_added = contents_df[contents_df.contributing_added.notna()].contributing_added
-    ax.scatter(contributing_file_added, (-5* np.ones((len(contributing_file_added),))), marker="v", s=100, label="contributing file")
+    ax.vlines(contributing_file_added, -5*dist, max_y, linestyles='dashed', color=colors[4])
+    ax.scatter(contributing_file_added, (-5*dist* np.ones((len(contributing_file_added),))), marker=10, s=100, label="contributing file", color=colors[4])
+    # paper publication
+    paper_published = paper_df[paper_df.date.notna()].date
+    ax.vlines(paper_published, -6*dist, max_y, linestyles='dashed', color=colors[5])
+    ax.scatter(paper_published, (-6*dist* np.ones((len(paper_published),))), marker=10, s=100, label="mention in publication", color=colors[5])
 
-def main(repo, dir, verbose):
-    info(verbose, "Loading data...")
+def main(repo, dir, output_dir, verbose):
+    info(verbose, f"Loading data for repo {repo}...")
     contents = load_data(dir, "contents.csv", repo, ["citation_added", "contributing_added"])
     contributions = load_data(dir, "contributions.csv", repo, "week_co")
     forks = load_data(dir, "forks.csv", repo, "date")
@@ -186,6 +202,7 @@ def main(repo, dir, verbose):
     metadata = load_data(dir, "metadata.csv", repo, "created_at")
     readme_history = load_data(dir, "readme_history.csv", repo, "author_date")
     stars = load_data(dir, "stars.csv", repo, "date")
+    paper_data = load_data(os.path.join(dir, "cleaned_links"), "joined.csv", repo, "date")
     info(verbose, "Data loading complete.")
 
     if len(metadata) == 0:
@@ -202,7 +219,7 @@ def main(repo, dir, verbose):
     axs[1].legend()
     no_open_and_closed_issues(issues, metadata, axs[2])
     engagement(forks, stars, metadata, axs[2])
-    date_highlights(readme_history, contents, metadata, axs[2])
+    date_highlights(readme_history, contents, metadata, paper_data, axs[2])
     axs[2].legend(loc="upper right")
     axs[2].grid(True)
     _, right = plt.xlim()
@@ -210,11 +227,11 @@ def main(repo, dir, verbose):
     plt.xlabel("week since repository creation")
     fig.suptitle(repo)
     s = repo.replace("/", "-")
-    output_dir = "repo_timelines/true_positives"
     fig.tight_layout()
-    os.makedirs(os.path.join(dir, output_dir), exist_ok=True)
-    plt.savefig(os.path.join(dir, output_dir, f"{s}.png"), bbox_inches="tight")
-    info(verbose, "Plot saved.")
+    outpath = os.path.join(dir, output_dir)
+    os.makedirs(outpath, exist_ok=True)
+    plt.savefig(os.path.join(outpath, f"{s}.png"), bbox_inches="tight")
+    info(verbose, f"Plot saved in {outpath}, file {s}.png.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -223,6 +240,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--repo", required=True, type=str, help="GitHub ID")
     parser.add_argument("--dir", default="../data/analysis", type=str, help="path to data directory")
+    parser.add_argument("--outdir", default="repo_timelines/true_positives", type=str, help="name of output folder in data directory")
     parser.add_argument("-v", "--verbose", action="store_true", help="enable verbose output")
     args = parser.parse_args()
-    main(args.repo, args.dir, args.verbose)
+    main(args.repo, args.dir, args.outdir, args.verbose)
