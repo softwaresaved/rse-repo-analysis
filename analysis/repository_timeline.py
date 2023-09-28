@@ -83,6 +83,7 @@ def contributor_team(contributions, metadata, forks, stars, axs):
     # user is active contributor if made at least one commit in last 12 weeks
     windowed_team_df = team_df.groupby(level="author").rolling(window=12, min_periods=0).sum().droplevel(0)
     windowed_team_df["active contributors"] = windowed_team_df.commits > 0
+    windowed_team_df["active contributors"] = windowed_team_df["active contributors"].map({True: "active", False: "inactive"})
     # plot per-user status
     sns.scatterplot(
         ax=axs[0],
@@ -90,7 +91,7 @@ def contributor_team(contributions, metadata, forks, stars, axs):
         x="week_since_repo_creation",
         y="author",
         hue="active contributors",
-        hue_order=[False, True],
+        hue_order=["inactive", "active"],
         palette=['#d62728', '#2ca02c'],
         marker="|",
         s=500,
@@ -99,14 +100,14 @@ def contributor_team(contributions, metadata, forks, stars, axs):
     users = contributions.author.unique()
     engagement_user_highlights(users, metadata, forks, stars, axs[0])
     # team size
-    team_size = windowed_team_df.groupby(level="week_since_repo_creation")["active contributors"].value_counts()[:,True].reindex(windowed_team_df.index.levels[1], fill_value=0)
+    team_size = windowed_team_df.groupby(level="week_since_repo_creation")["active contributors"].value_counts()[:,"active"].reindex(windowed_team_df.index.levels[1], fill_value=0)
     # plot
     team_size.plot(
         ax=axs[1],
         color="black",
         lw=2,
         # xlabel="week since repo creation",
-        # ylabel="contributor team size",
+        ylabel="contributor team size",
     )
 
 def no_open_and_closed_issues(issues, metadata, ax):
@@ -133,7 +134,7 @@ def no_open_and_closed_issues(issues, metadata, ax):
         y=["open issues", "closed issues"],
         lw=2,
         # xlabel="week since repo creation",
-        # ylabel="count"
+        ylabel="issue count"
         )
     
 def engagement(forks, stars, metadata, ax):
@@ -151,10 +152,20 @@ def engagement(forks, stars, metadata, ax):
     engagement_df = engagement_df.cumsum()
     engagement_df.plot(
         ax=ax,
-        lw=2
+        lw=2,
+        ylabel="count"
     )
     
-def date_highlights(readme_history, contents, metadata, paper_data, ax):
+def calc_y_timeline(data):
+    ys = [[] for _ in range(len(data))]
+    seen_x = []
+    for i in range(len(data)):
+        for x in data[i]:
+            ys[i].append(-1 * seen_x.count(x))
+            seen_x.append(x)
+    return ys
+
+def date_highlights(readme_history, contents, metadata, paper_data, ax, overlay_ax):
     df = pd.merge(metadata, readme_history, on="github_user_cleaned_url")
     df.dropna(subset=["author_date"], inplace=True)
     df["authored_in_week_since_creation"] = (df.author_date - df.created_at).dt.days // 7
@@ -164,34 +175,34 @@ def date_highlights(readme_history, contents, metadata, paper_data, ax):
     paper_df = pd.merge(metadata, paper_data, on="github_user_cleaned_url")
     paper_df.date = (paper_df.date - paper_df.created_at).dt.days // 7
     # headings
-    df = analyse_headings(df)
-    # plotting
-    prop_cycle = plt.rcParams['axes.prop_cycle']
-    colors = prop_cycle.by_key()['color']
-    max_y = ax.get_ylim()[1]
-    dist = max_y/25
+    df = analyse_headings(df)    
     ownership_added = df[df.ownership_addition].authored_in_week_since_creation
-    ax.vlines(ownership_added, -1*dist, max_y, linestyles='dashed', color=colors[0])
-    ax.scatter(ownership_added, (-1*dist * np.ones((len(ownership_added),))), marker=10, s=100, label="ownership heading", color=colors[0])
     usage_added = df[df.usage_addition].authored_in_week_since_creation
-    ax.vlines(usage_added, -2*dist, max_y, linestyles='dashed', color=colors[1])
-    ax.scatter(usage_added, (-2*dist * np.ones((len(usage_added),))), marker=10, s=100, label="usage heading", color=colors[1])
     # citation in README
     citation_added = df[(df.added_cites != "[]") & (df.added_cites.notna())].authored_in_week_since_creation
-    ax.vlines(citation_added, -3*dist, max_y, linestyles='dashed', color=colors[2])
-    ax.scatter(citation_added, (-3*dist * np.ones((len(citation_added),))), marker=10, s=100, label="citation in README", color=colors[2])
     # citation file
     citation_file_added = contents_df[contents_df.citation_added.notna()].citation_added
-    ax.vlines(citation_file_added, -4*dist, max_y, linestyles='dashed', color=colors[3])
-    ax.scatter(citation_file_added, (-4*dist* np.ones((len(citation_file_added),))), marker=10, s=100, label="citation file", color=colors[3])
     # contributing file
     contributing_file_added = contents_df[contents_df.contributing_added.notna()].contributing_added
-    ax.vlines(contributing_file_added, -5*dist, max_y, linestyles='dashed', color=colors[4])
-    ax.scatter(contributing_file_added, (-5*dist* np.ones((len(contributing_file_added),))), marker=10, s=100, label="contributing file", color=colors[4])
     # paper publication
     paper_published = paper_df[paper_df.date.notna()].date
-    ax.vlines(paper_published, -6*dist, max_y, linestyles='dashed', color=colors[5])
-    ax.scatter(paper_published, (-6*dist* np.ones((len(paper_published),))), marker=10, s=100, label="mention in publication", color=colors[5])
+    # plotting
+    ax.set(ylim=(-6, 0.4), yticks=[])
+    ax.set_xlabel("weeks since repository creation", loc="right")
+    ax.xaxis.set_label_position('top')
+    ax.xaxis.tick_top()
+    ax.spines['right'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    data = [ownership_added, usage_added, citation_added, citation_file_added, contributing_file_added, paper_published]
+    ys = calc_y_timeline(data)
+    labels = ["ownership heading", "usage heading", "citation in README", "citation file", "contributing file", "mention in publication"]
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+    ymax = 86
+    for i in range(len(data)):
+        ax.scatter(data[i], ys[i], marker="^", s=100, label=labels[i], color=colors[i])
+        overlay_ax.vlines(data[i], ys[i], ymax, linestyles='dashed', color=colors[i])
 
 def main(repo, dir, output_dir, verbose):
     info(verbose, f"Loading data for repo {repo}...")
@@ -209,25 +220,37 @@ def main(repo, dir, output_dir, verbose):
         info(verbose, f"Not enough data available for {repo}.")
         exit()
 
-    fig, axs = plt.subplots(nrows=3, figsize=(20, 10), sharex=True)
+    fig = plt.figure(figsize=(20, 20))
+    overlay_axis = fig.subplots()
+    overlay_axis.axis('off')
+    axs = fig.subplots(nrows=6, sharex=True, height_ratios=[3, 3, 2, 2, 2, 1])
+    for ax in axs:
+        ax.patch.set_alpha(0)
     info(verbose, "Crunching data...")
     user_type_wrt_issues(issues, metadata, forks, stars, axs[0])
     axs[0].legend(loc="upper right")
     axs[0].grid(True, axis="x")
-    contributor_team(contributions, metadata, forks, stars, axs[1:])
+    contributor_team(contributions, metadata, forks, stars, axs[1:3])
     axs[1].grid(True, axis="x")
     axs[1].legend()
-    no_open_and_closed_issues(issues, metadata, axs[2])
-    engagement(forks, stars, metadata, axs[2])
-    date_highlights(readme_history, contents, metadata, paper_data, axs[2])
     axs[2].legend(loc="upper right")
     axs[2].grid(True)
-    _, right = plt.xlim()
-    plt.xlim(-5, right+15)
-    plt.xlabel("week since repository creation")
+    no_open_and_closed_issues(issues, metadata, axs[3])
+    axs[3].legend(loc="upper right")
+    axs[3].grid(True)
+    engagement(forks, stars, metadata, axs[4])
+    axs[4].legend(loc="upper right")
+    axs[4].grid(True)    
+    date_highlights(readme_history, contents, metadata, paper_data, axs[5], overlay_axis)
+    axs[5].legend(loc="upper right", ncols=2)
+    # final adjustments
+    ymax = 86
+    _, xr = plt.xlim()
+    plt.xlim(-5, xr+15)
+    overlay_axis.set(xlim=(-5, xr+15), ylim=(-6, ymax))
     fig.suptitle(repo)
     s = repo.replace("/", "-")
-    fig.tight_layout()
+    fig.tight_layout(rect=[0, 0.03, 1, 0.98])
     outpath = os.path.join(dir, output_dir)
     os.makedirs(outpath, exist_ok=True)
     plt.savefig(os.path.join(outpath, f"{s}.png"), bbox_inches="tight")
