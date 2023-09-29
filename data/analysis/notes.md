@@ -261,3 +261,43 @@ The README is quite long, and it's also an ML project. I get the feeling that ML
 There are a few repos with high number of stars and decent number of forks that do not have any new contributors. None of the repos seem to use issues a lot, mostly for bug fixing (i.e. open shortly)? Maybe people are more inclined to contribute with a CONTRIBUTING file and some inviting tags like "good first issue" etc.
 
 ML repos might lead to higher engagement per default, I think (haven't validated) that the one-person repos with some engagement usually had to do with ML.
+
+##### Patterns
+
+The main pattern seems to be 
+1. Publication
+2. Interest
+3. Dormant
+
+with some variations in terms of magnitude.
+For example, in one-person repos the interest only shows as stars. They go dormant quicker than the others.
+High-interest repositories keep interest for longer, and it takes a different form, i.e. forks, PRs contributions (see for example `GazeTheWeb`). 
+Still, they go quiet after a while, meaning that the number of active contributors goes down and there is less fluctuation in the number of issues. 
+An exception is the repository `nilmtk` which experiences interest in phases, i.e. not growth in interest, but decreasing interest followed by again increased interest with newer contributors.
+
+Mentions in publications later on (probably as related work or tool instead of "original work") often lead to a spike in stars, sometimes even in forks.
+
+The number of forks grows with the number of stars at a lower rate.
+One exception is `dissect-cf`, where the number of forks is larger than that of stars.
+
+There are also a handful of repositories with apparently highly responsive owners (e.g. `Dusty-evolved-starkit` and `transquest`).
+Many issues are opened, but all are resolved by the owner so the contributing team does not grow.
+See caveats about this though.
+
+People who open issues and fork at the same time are usually adding a PR. These people can become contributors, i.e. make commits to the main branch.
+They don't do that when they are not interacted with though, meaning that their issues are left open.
+One example of this is `MOEADr`, where issues aren't responded to and PRs aren't commented on.
+
+##### Caveats
+
+- Issues can be normal issues or PRs.
+- PRs are not shown as commits: when someone makes a PR with multiple commits, merging this PR does not count as a commit itself, so it doesn't show up for the person merging it (that's the person closing the issue) and the commits that belonged to the PR do not show up either. Commits are only commits (that are not merge commits) to the main branch. This means that a good development workflow of PR, commit, merge yields NO trace in the contributor graph. (Example: `incone`, has a closed PR by another user, but the graph does not show that user as a contributor.)
+- The publication mention date might not be ideal - it's extracted from ePrints (`date` field), but maybe we should extract it from another source. Then again, the publication date is a bit arbitrary in any case due to the delay between preprints, conferences and journal publication....
+
+##### Things to (possibly) investigate
+
+- It might make sense to add a plot for the total number of contributors to show how the sea of contributors is growing, instead of only plotting the number of active contributors. We sort of see that info in the per-user-contribution plot, but it's not as quick.
+- Pick out some repos (e.g. the ones mentioned as examples and a couple more) and draw the phases on them. Look at the length and start of those phases in terms of weeks: When do new contributors arrive? When does the repository go dormant?
+- Differentiate between inactive forks, active forks that opened a PR and active forks that didn't open a PR.
+- Does it help if the repository used issues from the beginning? I feel like most of the repos didn't do that, issues are start being opened once other people start engaging with the project.
+- Does it help to respond to people's issues and close them?
