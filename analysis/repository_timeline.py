@@ -129,7 +129,8 @@ def no_open_and_closed_issues(issues, metadata, ax):
     # count issues
     issue_count_timeline["open_issues_count"] = issue_count_timeline.apply(lambda x: len(issues_timeline_df[
                                                                                             (issues_timeline_df.opened_in_week_since_repo_creation <= x.week_since_repo_creation) &
-                                                                                            (issues_timeline_df.closed_in_week_since_repo_creation >= x.week_since_repo_creation)
+                                                                                            ((issues_timeline_df.closed_in_week_since_repo_creation >= x.week_since_repo_creation) |
+                                                                                             (issues_timeline_df.closed_in_week_since_repo_creation.isna()))
                                                                                             ]), axis=1)
     issue_count_timeline["closed_issues_count"] = issue_count_timeline.apply(lambda x: len(issues_timeline_df[
                                                                                             (issues_timeline_df.closed_in_week_since_repo_creation < x.week_since_repo_creation)
