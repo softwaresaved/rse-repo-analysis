@@ -78,11 +78,23 @@
 
 ### ePrints
 
+Code for these plots is in [`analysis/eprints.ipynb`](../../analysis/eprints.ipynb).
+
 <img src="./overall/github_in_eprints.png" width="600"/>
+
+Method: Group dataset by year, count number of GitHub links found across all publications of that year.
 
 <img src="./overall/avg_github_in_eprints.png" width="600"/>
 
+Method: First, count the number of GitHub links found in each publication separately.
+Then, group by year and report the mean.
+
 <img src="./overall/min_one_github_in_eprints.png" width="800"/>
+
+Method: Group dataset by year and count how many publications contained at least one GitHub link.
+Those that did are displayed in orange bars, those that did not contain a single link are shown in blue bars.
+Note that the y-axis scales logarithmically.
+On top of the bars is the percentage of the total number of publications represented by the bar.
 
 ### GitHub
 
