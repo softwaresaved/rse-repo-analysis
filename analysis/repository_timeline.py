@@ -104,10 +104,17 @@ def contributor_team(contributions, metadata, forks, stars, axs):
     # plot
     team_size.plot(
         ax=axs[1],
-        color="black",
         lw=2,
         # xlabel="week since repo creation",
-        ylabel="contributor team size",
+        ylabel="number of contributors",
+    )
+    # overall pool of contributors
+    contributor_pool_df = team_df.groupby(level="author").cumsum()
+    contributor_pool_df["contributors"] = contributor_pool_df.commits > 0
+    contrib_pool = contributor_pool_df.groupby(level="week_since_repo_creation")["contributors"].value_counts()[:,True].reindex(contributor_pool_df.index.levels[1], fill_value=0)
+    contrib_pool.plot(
+        ax=axs[1],
+        lw=2,
     )
 
 def no_open_and_closed_issues(issues, metadata, ax):
