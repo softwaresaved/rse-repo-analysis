@@ -7,6 +7,7 @@ import string
 import re
 from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
 from matplotlib import pyplot as plt
+from datetime import datetime
 
 def info(verbose, msg):
     if verbose:
@@ -117,6 +118,26 @@ def plot_headings(readme_df, ax):
     ax.set_axis_off()
     ax.set(title="README headings")
 
+def plot_table(metadata, stars, forks, ax):
+    age = (datetime.today() - metadata["created_at"]).dt.days // 7
+    fork_counts = forks.groupby("github_user_cleaned_url")["user"].count()
+    fork_counts.rename("forks_no", inplace=True)
+    star_counts = stars.groupby("github_user_cleaned_url")["user"].count()
+    star_counts.rename("stars_no", inplace=True)
+    cell_text = [
+        [f"{age.mean():.2f}", f"{age.std():.2f}", f"{age.median():.1f}", f"{age.min():.0f}", f"{age.max():.0f}"],
+        [f"{fork_counts.mean():.2f}", f"{fork_counts.std():.2f}", f"{fork_counts.median():.1f}", f"{fork_counts.min():.0f}", f"{fork_counts.max():.0f}"],
+        [f"{star_counts.mean():.2f}", f"{star_counts.std():.2f}", f"{star_counts.median():.1f}", f"{star_counts.min():.0f}", f"{star_counts.max():.0f}"]
+        ]
+    table = ax.table(cellText=cell_text,
+                     rowLabels=["age (weeks)", "forks", "stars"],
+                     colLabels=["mean", "std", "median", "min", "max"],
+                     loc='center right'
+                     )
+    table.scale(0.85, 1)
+    ax.set_axis_off()
+    ax.set(title="stats")
+
 def main(data_dir, verbose, filter_path, tag):
     info(verbose, "Loading data...")
     contents = pd.read_csv(os.path.join(data_dir, "contents.csv"), index_col=0)
@@ -125,6 +146,8 @@ def main(data_dir, verbose, filter_path, tag):
     contributions = pd.read_csv(os.path.join(data_dir, "contributions.csv"), index_col=0)
     contributions["week_co"] = pd.to_datetime(contributions.week_co)
     readme_df = pd.read_csv(os.path.join(data_dir, "readme_history.csv"), index_col=0)
+    stars = pd.read_csv(os.path.join(data_dir, "stars.csv"), index_col=0)
+    forks = pd.read_csv(os.path.join(data_dir, "forks.csv"), index_col=0)
 
     if filter_path is not None:
         info(verbose, "Filtering data...")
@@ -134,22 +157,32 @@ def main(data_dir, verbose, filter_path, tag):
         metadata = metadata.loc[metadata.github_user_cleaned_url.isin(filtered)]
         contributions = contributions.loc[contributions.github_user_cleaned_url.isin(filtered)]
         readme_df = readme_df.loc[readme_df.github_user_cleaned_url.isin(filtered)]
+        stars = stars.loc[stars.github_user_cleaned_url.isin(filtered)]
+        forks = forks.loc[forks.github_user_cleaned_url.isin(filtered)]
 
     info(verbose, "Plotting...")
-    fig, axs = plt.subplots(ncols=3, nrows=2, figsize=(18, 12))
-    fig.tight_layout(h_pad=8, w_pad=5, rect=(0.05, 0.05, 0.95, 0.95))
-    plot_license_type(contents, axs[0][0])
-    plot_emojis(contents, axs[0][1])
-    plot_contributing_file_present(contents, axs[1][0])
-    plot_team_size(metadata, contributions, axs[1][1])
-    plot_readme_size(contents, axs[0][2], type="pie")
-    plot_headings(readme_df, axs[1][2])
+    fig = plt.figure(figsize=(18, 12))
+    ax1 = plt.subplot(2, 3, 1)
+    ax2 = plt.subplot(2, 3, 2)
+    ax4 = plt.subplot(2, 3, 4)
+    ax5 = plt.subplot(2, 3, 5)
+    ax3 = plt.subplot(6, 3, (3, 9))
+    ax6 = plt.subplot(6, 3, (12, 15))
+    ax7 = plt.subplot(6, 3, 18)
+    fig.tight_layout(h_pad=1, w_pad=5, rect=(0.05, 0.05, 0.95, 0.95))
+    plot_license_type(contents, ax1)
+    plot_emojis(contents, ax2)
+    plot_contributing_file_present(contents, ax4)
+    plot_team_size(metadata, contributions, ax5)
+    plot_readme_size(contents, ax3, type="pie")
+    plot_headings(readme_df, ax6)
+    plot_table(metadata, stars, forks, ax7)
     if tag:
         plt.suptitle(f"Overall statistics for ePrints repositories ({tag})")
-        plt.savefig(os.path.join(data_dir, "overall", f"overall_{tag}.png"))#, bbox_inches="tight")
+        plt.savefig(os.path.join(data_dir, "overall", f"overall_{tag}.png"), bbox_inches="tight")
     else:
         plt.suptitle("Overall statistics for ePrints repositories")
-        plt.savefig(os.path.join(data_dir, "overall", "overall.png"))#, bbox_inches="tight")
+        plt.savefig(os.path.join(data_dir, "overall", "overall.png"), bbox_inches="tight")
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(
