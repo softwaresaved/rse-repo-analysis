@@ -287,6 +287,8 @@ High-interest repositories keep interest for longer, and it takes a different fo
 Still, they go quiet after a while, meaning that the number of active contributors goes down and there is less fluctuation in the number of issues. 
 An exception is the repository `nilmtk` which experiences interest in phases, i.e. not growth in interest, but decreasing interest followed by again increased interest with newer contributors.
 
+In `esbmc`, we can observe two phases of interest after publication: One where the contributor pool grows slowly and then one where it grows much quicker.
+
 Mentions in publications later on (probably as related work or tool instead of "original work") often lead to a spike in stars, sometimes even in forks.
 
 The number of forks grows with the number of stars at a lower rate.
@@ -308,8 +310,8 @@ One example of this is `MOEADr`, where issues aren't responded to and PRs aren't
 
 ##### Things to (possibly) investigate
 
-- It might make sense to add a plot for the total number of contributors to show how the sea of contributors is growing, instead of only plotting the number of active contributors. We sort of see that info in the per-user-contribution plot, but it's not as quick.
 - Pick out some repos (e.g. the ones mentioned as examples and a couple more) and draw the phases on them. Look at the length and start of those phases in terms of weeks: When do new contributors arrive? When does the repository go dormant?
 - Differentiate between inactive forks, active forks that opened a PR and active forks that didn't open a PR.
 - Does it help if the repository used issues from the beginning? I feel like most of the repos didn't do that, issues are start being opened once other people start engaging with the project.
 - Does it help to respond to people's issues and close them?
+- Are new people more likely to open issues if at publication date some issues had already been opened?
