@@ -253,9 +253,9 @@ def main(repo, dir, output_dir, verbose):
     axs[5].legend(loc="upper right", ncols=2)
     # final adjustments
     ymax = 86
-    _, xr = plt.xlim()
-    plt.xlim(-5, xr+15)
-    overlay_axis.set(xlim=(-5, xr+15), ylim=(-6, ymax))
+    xl, xr = plt.xlim()
+    plt.xlim(xl, xr+15)
+    overlay_axis.set(xlim=(xl, xr+15), ylim=(-6, ymax))
     fig.suptitle(repo)
     s = repo.replace("/", "-")
     fig.tight_layout(rect=[0, 0.03, 1, 0.98])
