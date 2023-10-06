@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import os
 import seaborn as sns
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from matplotlib import pyplot as plt
 
 def info(verbose, msg):
@@ -37,7 +37,7 @@ def engagement_user_highlights(users, metadata, forks, stars, ax):
     ax.scatter(user_forks.week_since_repo_creation, user_forks.user, marker="v", s=100, label="forked")
     ax.scatter(user_stars.week_since_repo_creation, user_stars.user, marker="v", s=100, label="starred")
 
-def user_type_wrt_issues(issues, metadata, forks, stars, ax):
+def user_type_wrt_issues(issues, metadata, forks, stars, analysis_end_date, ax):
     # map dates to weeks
     merged_df = pd.merge(issues, metadata, on="github_user_cleaned_url", suffixes=(None,"_repo"))
     merged_df["created_at"] = (merged_df["created_at"] - merged_df["created_at_repo"]).dt.days // 7
@@ -49,7 +49,7 @@ def user_type_wrt_issues(issues, metadata, forks, stars, ax):
     closed.index.rename({"closed_at": "week_since_repo_creation", "closed_by": "user"}, inplace=True)
     issues_by_user = pd.merge(created, closed, left_index=True, right_index=True, how="outer")
     # build timeline DataFrame
-    end = (datetime.now(tz=timezone.utc) - metadata.created_at.iloc[0]).days // 7
+    end = (analysis_end_date - metadata.created_at.iloc[0]).days // 7
     x_data = pd.Series(np.arange(end), name="week_since_repo_creation")
     df = pd.merge(x_data, pd.Series(issues_by_user.index.unique(level="user")), how="cross").set_index(["user", "week_since_repo_creation"])
     df = pd.merge(df, issues_by_user, left_index=True, right_index=True, how="outer")
@@ -117,13 +117,13 @@ def contributor_team(contributions, metadata, forks, stars, axs):
         lw=2,
     )
 
-def no_open_and_closed_issues(issues, metadata, ax):
+def no_open_and_closed_issues(issues, metadata, analysis_end_date, ax):
     # reframe timeline in terms of week since repo creation
     issues_timeline_df = pd.merge(metadata, issues, on="github_user_cleaned_url", suffixes=("_repo", None))
     issues_timeline_df["opened_in_week_since_repo_creation"] = (issues_timeline_df.created_at - issues_timeline_df.created_at_repo).dt.days // 7
     issues_timeline_df["closed_in_week_since_repo_creation"] = (issues_timeline_df.closed_at - issues_timeline_df.created_at_repo).dt.days // 7
     # build weekly dataframe
-    end = (datetime.now(tz=timezone.utc) - metadata.created_at.iloc[0]).days // 7
+    end = (analysis_end_date - metadata.created_at.iloc[0]).days // 7
     x_data = pd.Series(np.arange(end), name="week_since_repo_creation")
     issue_count_timeline = pd.DataFrame(x_data)
     # count issues
@@ -145,14 +145,14 @@ def no_open_and_closed_issues(issues, metadata, ax):
         ylabel="issue count"
         )
     
-def engagement(forks, stars, metadata, ax):
+def engagement(forks, stars, metadata, analysis_end_date, ax):
     forks_df = pd.merge(forks, metadata, on="github_user_cleaned_url")
     forks_df["week_since_repo_creation"] = (forks_df.date - forks_df.created_at).dt.days // 7
     forks_df = forks_df[["week_since_repo_creation", "user"]].groupby("week_since_repo_creation").count().rename(columns={"user": "no forks"}).sort_index()
     stars_df = pd.merge(stars, metadata, on="github_user_cleaned_url")
     stars_df["week_since_repo_creation"] = (stars_df.date - stars_df.created_at).dt.days // 7
     stars_df = stars_df[["week_since_repo_creation", "user"]].groupby("week_since_repo_creation").count().rename(columns={"user": "no stars"}).sort_index()
-    end = (datetime.now(tz=timezone.utc) - metadata.created_at.iloc[0]).days // 7
+    end = (analysis_end_date - metadata.created_at.iloc[0]).days // 7
     x_data = pd.Series(np.arange(end), name="week_since_repo_creation")
     engagement_df = pd.merge(x_data, forks_df, on="week_since_repo_creation", how="outer")
     engagement_df = pd.merge(engagement_df, stars_df, on="week_since_repo_creation", how="outer").fillna(0)
@@ -224,6 +224,8 @@ def main(repo, dir, output_dir, verbose):
     paper_data = load_data(os.path.join(dir, "cleaned_links"), "joined.csv", repo, "date")
     info(verbose, "Data loading complete.")
 
+    analysis_end_date = contributions.week_co.max() + timedelta(days=7)
+
     if len(metadata) == 0:
         info(verbose, f"Not enough data available for {repo}.")
         exit()
@@ -235,7 +237,7 @@ def main(repo, dir, output_dir, verbose):
     for ax in axs:
         ax.patch.set_alpha(0)
     info(verbose, "Crunching data...")
-    user_type_wrt_issues(issues, metadata, forks, stars, axs[0])
+    user_type_wrt_issues(issues, metadata, forks, stars, analysis_end_date, axs[0])
     axs[0].legend(loc="upper right")
     axs[0].grid(True, axis="x")
     contributor_team(contributions, metadata, forks, stars, axs[1:3])
@@ -243,10 +245,10 @@ def main(repo, dir, output_dir, verbose):
     axs[1].legend()
     axs[2].legend(loc="upper right")
     axs[2].grid(True)
-    no_open_and_closed_issues(issues, metadata, axs[3])
+    no_open_and_closed_issues(issues, metadata, analysis_end_date, axs[3])
     axs[3].legend(loc="upper right")
     axs[3].grid(True)
-    engagement(forks, stars, metadata, axs[4])
+    engagement(forks, stars, metadata, analysis_end_date, axs[4])
     axs[4].legend(loc="upper right")
     axs[4].grid(True)    
     date_highlights(readme_history, contents, metadata, paper_data, axs[5], overlay_axis)
