@@ -29,8 +29,8 @@ def main(date, domain):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        prog="clean_eprints_links",
-        description="Clean the repository links retrieved from ePrints. Only works for Github Links for now."
+        prog="merge_and_filter",
+        description="Load cleaned links from multiple ePrints repositories and merge them into one file."
     )
     parser.add_argument("--date", required=True, type=str, help="date range for filtering ePrints, e.g. 2021-2022")
     parser.add_argument("--domain", required=True, type=str, help="domain to match against (only one can be provided for now, e.g. github.com)")
