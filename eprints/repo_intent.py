@@ -5,7 +5,7 @@ def main(filepath, true_list_path, false_list_path):
     df = pd.read_csv(filepath)
     df = df[df.page_no < 2]
     created_map = {"github_repo_id": [], "mention_created": []}
-    for path, v in [(true_list_path, "true"), (false_list_path, "false")]:
+    for path, v in [(true_list_path, True), (false_list_path, False)]:
         with open(path, "r") as f:
             for line in f.readlines():
                 created_map["github_repo_id"].append(line.rstrip("\n"))
