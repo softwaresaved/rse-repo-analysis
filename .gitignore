@@ -149,4 +149,4 @@ data/analysis/eprints_pub
 !analysis/*
 !data/analysis/overall/*.png
 #!data/analysis/repo_timelines/*/*.png
-!data/eprints_w_intent.csv
+!data/outputs
