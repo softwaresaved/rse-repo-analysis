@@ -1,4 +1,4 @@
-# TODO: remove unused and duplicates
+# TODO: remove unused
 import pandas as pd
 import numpy as np
 import os
@@ -6,32 +6,28 @@ import argparse
 import ast
 import string
 import re
-from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
-from matplotlib import pyplot as plt
-from datetime import datetime
-import argparse
-import pandas as pd
-import numpy as np
 import os
-import seaborn as sns
 from datetime import datetime, timezone, timedelta
-from matplotlib import pyplot as plt
 
 def info(verbose, msg):
+    """Print message to stdout if verbose is True.
+
+    Args:
+        verbose (bool): if True, print message.
+        msg (str): debugging message
+    """
     if verbose:
         print(f"[INFO] {msg}")
 
-def clean_heading(h):
-    to_remove = string.digits + string.whitespace + ".:"
-    h = h.lstrip(to_remove)
-    pattern = "\[(.+?)\]\(.+?\)"
-    h = re.sub(pattern, r'\1', h, count=0)
-    h = h.replace(string.punctuation, "")
-    h = h.strip(string.punctuation)
-    h = h.lower()
-    return h
-
 def license_type(contents):
+    """Categorise license into permissive, non-permissive, none and unknown.
+
+    Args:
+        contents (pd.DataFrame): dataframe with column "license".
+
+    Returns:
+        pd.DataFrame: same dataframe with added column "license_type".
+    """
     contents = contents.copy()
     permissive_licenses = ["mit", "gpl-3.0", "apache-2.0", "bsd-3-clause", "gpl-2.0", "bsd-2-clause"] # https://en.wikipedia.org/wiki/Permissive_software_license
     contents.license = contents.license.fillna('None')
@@ -39,57 +35,60 @@ def license_type(contents):
         contents.license.isin(permissive_licenses), "permissive", np.where(
         contents.license == "None", "None", np.where(
         contents.license == "other", "unknown", "non-permissive")))
+    return contents
 
-def team_size(metadata, contributions):
-    contrib_df = pd.merge(metadata[["github_user_cleaned_url", "created_at"]], contributions)
-    contrib_df["week_since_repo_creation"] = (contrib_df.week_co - contrib_df.created_at).dt.days // 7
-    team_df = contrib_df[["github_user_cleaned_url", "author", "week_since_repo_creation", "commits"]].set_index(["github_user_cleaned_url", "author", "week_since_repo_creation"]).sort_index()
+def team_size(contributions):
+    """Count the number of active contributors for each repository over time. A user is an active contributor if they made at least one commit in last 12 weeks.
+
+    Args:
+        contributions (pd.DataFrame): dataframe with GitHub commit data
+
+    Returns:
+        pd.DataFrame: data frame where each row corresponds to one week in a repo's life and includes the number of active contributors
+    """
+    team_df = contributions[["github_user_cleaned_url", "author", "week_since_repo_creation_week_co", "commits"]].set_index(["github_user_cleaned_url", "author", "week_since_repo_creation_week_co"]).sort_index()
     # user is active contributor if made at least one commit in last 12 weeks
     windowed_team_df = team_df.groupby(level="author").rolling(window=12, min_periods=0).sum().droplevel(0)
-    windowed_team_df["active contributors"] = windowed_team_df.commits > 0
-    # team size
-    # TODO: aggregate with contribs or something? or produce a timeline dataset?
-    team_size = windowed_team_df.groupby(level=["github_user_cleaned_url", "week_since_repo_creation"])["active contributors"].value_counts()[:,:,True]
-    # TODO: aggregate with metadata
-    max_team_size = team_size.groupby(level="github_user_cleaned_url").max()
+    windowed_team_df["active_contributors"] = windowed_team_df.commits > 0
+    # contributor team size
+    contrib_team_size = windowed_team_df.groupby(level=["github_user_cleaned_url", "week_since_repo_creation_week_co"])["active_contributors"].value_counts()[:,:,True]
+    return contrib_team_size.reset_index()
 
-def readme_size(contents):
-    bins = [0, 1, 300, 1500, 10000]
-    binmeanings = ["none", "ultra-short", "short", "informative", "detailed"]
-    if contents.readme_size.max() > bins[-1]:
-        bins.append(contents.readme_size.max())
-    # TODO: aggregate this info with metadata
-    counts, bins = np.histogram(contents.readme_size, bins)
+def readme_size_classification(contents):
+    """Classify the amount of detail in a README file based on its size. Thresholds were determined empirically.
 
-def headings(readme_df):
-    headings = []
-    for l in readme_df.added_headings.dropna():
-        headings += ast.literal_eval(l)
-    headings = [clean_heading(h) for h in headings]
-    # TODO: aggregate headings
+    Args:
+        contents (pd.DataFrame): dataframe with column "readme_size"
 
-def main_overall(data_dir, verbose):
-    info(verbose, "Loading data...")
-    contents = pd.read_csv(os.path.join(data_dir, "contents.csv"), index_col=0)
-    metadata = pd.read_csv(os.path.join(data_dir, "metadata.csv"), index_col=0)
-    metadata["created_at"] = pd.to_datetime(metadata.created_at)
-    contributions = pd.read_csv(os.path.join(data_dir, "contributions.csv"), index_col=0)
-    contributions["week_co"] = pd.to_datetime(contributions.week_co)
-    readme_df = pd.read_csv(os.path.join(data_dir, "readme_history.csv"), index_col=0)
-    stars = pd.read_csv(os.path.join(data_dir, "stars.csv"), index_col=0)
-    forks = pd.read_csv(os.path.join(data_dir, "forks.csv"), index_col=0)
+    Returns:
+        pd.DataFrame: same dataframe with added column "readme_size_class".
+    """
+    def map_size(byte_size):
+        if byte_size < 1:
+            return "none"
+        if byte_size < 300:
+            return "ultra-short"
+        if byte_size < 1500:
+            return "short"
+        if byte_size < 10000:
+            return "informative"
+        else:  # larger than 10000 Bytes
+            return "detailed"
+    contents["readme_size_class"] = contents.readme_size.map(map_size)
+    return contents
 
-    info(verbose, "Aggregating...")
-    license_type(contents)
-    team_size(metadata, contributions)
-    readme_size(contents)
-    headings(readme_df)
+def load_data(data_dir, filename, to_datetime=None):
+    """Load dataframes from file and convert relevant dolumns to datetime type.
 
-############## timeline
+    Args:
+        data_dir (str): path to data folder
+        filename (str): name of data file
+        to_datetime (list<str> | str, optional): Columns that should be converted to datetime. Defaults to None.
 
-def load_data(data_dir, filename, repo, to_datetime=None):
+    Returns:
+        pd.DataFrame: modified data frame
+    """
     df = pd.read_csv(os.path.join(data_dir, filename), index_col=0)
-    df = df[df["github_user_cleaned_url"] == repo]
     if type(to_datetime) == list:
         for dt in to_datetime:
             df[dt] = pd.to_datetime(df[dt], utc=True)
@@ -97,60 +96,130 @@ def load_data(data_dir, filename, repo, to_datetime=None):
         df[to_datetime] = pd.to_datetime(df[to_datetime], utc=True)
     return df
 
+def aggregate_week_since_repo_creation(metadata, df, label=None):
+    """Translate date columns into weeks since repo creation.
+
+    Args:
+        metadata (pd.DataFrame): dataframe with columns "github_user_cleaned_url" and "created_at"
+        df (pd.DataFrame): dataframe that should be aggregated
+        label (list<str> | str, optional): column name(s) with date information
+
+    Returns:
+        pd.DataFrame: input dataframe with added column "week_since_repo_creation_{original_column_name}"
+    """
+    repo_creation_df = metadata[["created_at", "github_user_cleaned_url"]].rename(columns={"created_at": "repo_created_at"})
+    df = pd.merge(df, repo_creation_df, on="github_user_cleaned_url")
+    if type(label) == list:
+        for column in label:
+            df[f"week_since_repo_creation_{column}"] = (df[column] - df.repo_created_at).dt.days // 7
+    elif type(label) == str:
+        df[f"week_since_repo_creation_{label}"] = (df[label] - df.repo_created_at).dt.days // 7
+    return df
+
+def filter_repo(df, repo):
+    """Choose subset of dataframe that deals with a specific GitHub repository.
+
+    Args:
+        df (pd.DataFrame): dataframe with column "github_user_cleaned_url"
+        repo (str): GitHub repository ID
+
+    Returns:
+        pd.DataFrame: input dataframe with only the columns for the given repo.
+    """
+    return df[df["github_user_cleaned_url"] == repo]
+
+def clean_headings(readme_df):
+    """Remove digits (e.g. heading or version numbering) from headings, convert to lowercase.
+
+    Args:
+        readme_df (pd.DataFrame): dataframe with README history, including columns "added_headings" and "deleted_headings"
+
+    Returns:
+        pd.DataFrame: input dataframe with additional columns "cleaned_added_headings" and "cleaned_deleted_headings"
+    """
+    def clean(headings_list):
+        l = ast.literal_eval(headings_list)
+        to_remove = string.digits + string.whitespace + ".:"
+        cleaned_headings_list = []
+        for h in l:
+            h = h.lstrip(to_remove)
+            pattern = "\[(.+?)\]\(.+?\)"
+            h = re.sub(pattern, r'\1', h, count=0)
+            h = h.replace(string.punctuation, "")
+            h = h.strip(string.punctuation)
+            h = h.lower()
+            cleaned_headings_list.append(h)
+        return cleaned_headings_list
+    readme_df["cleaned_added_headings"] = readme_df.added_headings.map(clean, na_action="ignore")
+    readme_df["cleaned_deleted_headings"] = readme_df.deleted_headings.map(clean, na_action="ignore")
+    return readme_df
+
+def engagement_counts(stars, forks):
+    """Count forks and stars for each repository
+
+    Args:
+        stars (pd.DataFrame): dataframe with columns "github_user_cleaned_url" and "user" for each added fork
+        forks (pd.DataFrame): dataframe with columns "github_user_cleaned_url" and "user" for each added star
+
+    Returns:
+        pd.DataFrame: dataframe with columns "github_user_cleaned_url", "stars_count", "forks_count"
+    """
+    fork_counts = forks.groupby("github_user_cleaned_url")["user"].count()
+    fork_counts.rename("forks_count", inplace=True)
+    star_counts = stars.groupby("github_user_cleaned_url")["user"].count()
+    star_counts.rename("stars_count", inplace=True)
+    engagement_df = pd.concat([fork_counts, star_counts], axis=1).reset_index()
+    return engagement_df    
+
+############## timeline
+
 def analyse_headings(df):
+    """Map added headings to relevant ownership and usage vocabulary. Vocabulary is constructed based on empirical findings so will likely not be complete.
+
+    Args:
+        df (pd.DataFrame): dataframe with column "added_headings"
+
+    Returns:
+        pd.DataFrame: same dataframe with added boolean columns "ownership_addtion" and "usage_addition"
+    """
     interesting_words = {
         "ownership": ["license", "example", "reference", "citation", "cited", "publication", "paper"],
         "usage": ["requirements", "using", "example", "usage", "run", "install", "installing", "installation", "tutorial", "tutorials", "build", "guide", "documentation"]
     }
     df["ownership_addition"] = df.added_headings.str.contains("|".join(interesting_words["ownership"]), case=False)
     df["usage_addition"] = df.added_headings.str.contains("|".join(interesting_words["usage"]), case=False)
+    df = df.astype({
+        "ownership_addition": bool,
+        "usage_addition": bool
+    })
     return df
 
-def engagement_user_highlights(users, metadata, forks, stars):
-    user_forks = pd.merge(forks[forks.user.isin(users)], metadata, on="github_user_cleaned_url")
-    user_forks["week_since_repo_creation"] = (user_forks.date - user_forks.created_at).dt.days // 7
-    user_stars = pd.merge(stars[stars.user.isin(users)], metadata, on="github_user_cleaned_url")
-    user_stars["week_since_repo_creation"] = (user_stars.date - user_stars.created_at).dt.days // 7
-
-def user_type_wrt_issues(issues, metadata, forks, stars, analysis_end_date, ax):
-    # map dates to weeks
-    merged_df = pd.merge(issues, metadata, on="github_user_cleaned_url", suffixes=(None,"_repo"))
-    merged_df["created_at"] = (merged_df["created_at"] - merged_df["created_at_repo"]).dt.days // 7
-    merged_df["closed_at"] = (merged_df["closed_at"] - merged_df["created_at_repo"]).dt.days // 7
+# TODO
+def user_type_wrt_issues(issues, timelines_df):
     # count number of created and closed issues by user + week
-    created = merged_df.groupby(["user", "created_at"])["state"].count().rename("created_count")
-    created.index.rename({"created_at": "week_since_repo_creation"}, inplace=True)
-    closed = merged_df.groupby(["closed_by", "closed_at"])["state"].count().rename("closed_count")
-    closed.index.rename({"closed_at": "week_since_repo_creation", "closed_by": "user"}, inplace=True)
-    issues_by_user = pd.merge(created, closed, left_index=True, right_index=True, how="outer")
+    created = issues.groupby(["github_user_cleaned_url", "user", "week_since_repo_creation_created_at"])["state"].count().rename("created_count")
+    created.index.rename({"week_since_repo_creation_created_at": "week_since_repo_creation"}, inplace=True)
+    closed = issues.groupby(["github_user_cleaned_url", "closed_by", "week_since_repo_creation_closed_at"])["state"].count().rename("closed_count")
+    closed.index.rename({"week_since_repo_creation_closed_at": "week_since_repo_creation", "closed_by": "user"}, inplace=True)
+    issues_by_user = pd.merge(created, closed, left_index=True, right_index=True, how="outer").reset_index()
+    issues_by_user["week_since_repo_creation"] = issues_by_user["week_since_repo_creation"].astype(int)
+    issue_users_per_repo = issues_by_user.groupby("github_user_cleaned_url")["user"].unique()
     # build timeline DataFrame
-    end = (analysis_end_date - metadata.created_at.iloc[0]).days // 7
-    x_data = pd.Series(np.arange(end), name="week_since_repo_creation")
-    df = pd.merge(x_data, pd.Series(issues_by_user.index.unique(level="user")), how="cross").set_index(["user", "week_since_repo_creation"])
-    df = pd.merge(df, issues_by_user, left_index=True, right_index=True, how="outer")
+    # TODO: FIX MERGE BUGS
+    df = pd.merge(timelines_df, issue_users_per_repo, left_index=True, right_index=True, how="left").explode("user")
+    df = df.reset_index().set_index(["github_user_cleaned_url", "weeks_since_repo_creation", "user"])
+    df = pd.merge(df, issues_by_user, left_index=True, right_index=True, how="left")
+    print(df)
     df.fillna(0, inplace=True)
-    # determine user status with window of 12 weeks onwards
-    windowed_df = df.groupby(level="user").rolling(window=12, min_periods=0).sum().droplevel(0)
-    conditions = [(windowed_df.created_count > 0) & (windowed_df.closed_count == 0), (windowed_df.created_count == 0) & (windowed_df.closed_count > 0), (windowed_df.created_count > 0) & (windowed_df.closed_count > 0)]
-    choices = ["opening", "closing", "both"]
-    windowed_df["status"] = np.select(conditions, choices, default="inactive")
-    # plot
-    sns.scatterplot(
-        ax=ax,
-        data=windowed_df,
-        x="week_since_repo_creation",
-        y="user",
-        hue="status",
-        hue_order=["inactive", "opening", "closing", "both"],
-        palette=['#d62728', '#1f77b4', '#ff7f0e', '#2ca02c'],
-        marker="|",
-        s=500,
-        )
-    ax.set_ylabel("issue user")
-    users = np.unique(np.concatenate([issues.user.unique(), issues.closed_by.dropna().unique()]))
-    engagement_user_highlights(users, metadata, forks, stars, ax)
+    #print(df)
+    ## determine user status with window of 12 weeks onwards
+    #windowed_df = df.groupby(level="user").rolling(window=12, min_periods=0).sum().droplevel(0)
+    #conditions = [(windowed_df.created_count > 0) & (windowed_df.closed_count == 0), (windowed_df.created_count == 0) & (windowed_df.closed_count > 0), (windowed_df.created_count > 0) & (windowed_df.closed_count > 0)]
+    #choices = ["opening", "closing", "both"]
+    #windowed_df["status"] = np.select(conditions, choices, default="inactive")
 
-def contributor_team(contributions, metadata, forks, stars, axs):
+# TODO
+def contributor_team(contributions, metadata, forks, stars):
     # map dates to weeks
     contrib_df = pd.merge(metadata[["github_user_cleaned_url", "created_at"]], contributions)
     contrib_df["week_since_repo_creation"] = (contrib_df.week_co - contrib_df.created_at).dt.days // 7
@@ -159,40 +228,17 @@ def contributor_team(contributions, metadata, forks, stars, axs):
     windowed_team_df = team_df.groupby(level="author").rolling(window=12, min_periods=0).sum().droplevel(0)
     windowed_team_df["active contributors"] = windowed_team_df.commits > 0
     windowed_team_df["active contributors"] = windowed_team_df["active contributors"].map({True: "active", False: "inactive"})
-    # plot per-user status
-    sns.scatterplot(
-        ax=axs[0],
-        data=windowed_team_df,
-        x="week_since_repo_creation",
-        y="author",
-        hue="active contributors",
-        hue_order=["inactive", "active"],
-        palette=['#d62728', '#2ca02c'],
-        marker="|",
-        s=500,
-    )
-    axs[0].set_ylabel("contributing user")
     users = contributions.author.unique()
-    engagement_user_highlights(users, metadata, forks, stars, axs[0])
+    engagement_user_highlights(users, metadata, forks, stars)
     # team size
     team_size = windowed_team_df.groupby(level="week_since_repo_creation")["active contributors"].value_counts()[:,"active"].reindex(windowed_team_df.index.levels[1], fill_value=0)
-    # plot
-    team_size.plot(
-        ax=axs[1],
-        lw=2,
-        # xlabel="week since repo creation",
-        ylabel="number of contributors",
-    )
     # overall pool of contributors
     contributor_pool_df = team_df.groupby(level="author").cumsum()
     contributor_pool_df["contributors"] = contributor_pool_df.commits > 0
     contrib_pool = contributor_pool_df.groupby(level="week_since_repo_creation")["contributors"].value_counts()[:,True].reindex(contributor_pool_df.index.levels[1], fill_value=0)
-    contrib_pool.plot(
-        ax=axs[1],
-        lw=2,
-    )
 
-def no_open_and_closed_issues(issues, metadata, analysis_end_date, ax):
+#TODO
+def no_open_and_closed_issues(issues, metadata, analysis_end_date):
     # reframe timeline in terms of week since repo creation
     issues_timeline_df = pd.merge(metadata, issues, on="github_user_cleaned_url", suffixes=("_repo", None))
     issues_timeline_df["opened_in_week_since_repo_creation"] = (issues_timeline_df.created_at - issues_timeline_df.created_at_repo).dt.days // 7
@@ -210,17 +256,9 @@ def no_open_and_closed_issues(issues, metadata, analysis_end_date, ax):
     issue_count_timeline["closed_issues_count"] = issue_count_timeline.apply(lambda x: len(issues_timeline_df[
                                                                                             (issues_timeline_df.closed_in_week_since_repo_creation < x.week_since_repo_creation)
                                                                                             ]), axis=1)
-    # plot
-    issue_count_timeline.rename(columns={"open_issues_count": "open issues", "closed_issues_count": "closed issues"}).plot(
-        ax=ax,
-        x="week_since_repo_creation",
-        y=["open issues", "closed issues"],
-        lw=2,
-        # xlabel="week since repo creation",
-        ylabel="issue count"
-        )
     
-def engagement(forks, stars, metadata, analysis_end_date, ax):
+# TODO    
+def engagement(forks, stars, metadata, analysis_end_date):
     forks_df = pd.merge(forks, metadata, on="github_user_cleaned_url")
     forks_df["week_since_repo_creation"] = (forks_df.date - forks_df.created_at).dt.days // 7
     forks_df = forks_df[["week_since_repo_creation", "user"]].groupby("week_since_repo_creation").count().rename(columns={"user": "no forks"}).sort_index()
@@ -233,22 +271,10 @@ def engagement(forks, stars, metadata, analysis_end_date, ax):
     engagement_df = pd.merge(engagement_df, stars_df, on="week_since_repo_creation", how="outer").fillna(0)
     engagement_df = engagement_df.set_index("week_since_repo_creation")
     engagement_df = engagement_df.cumsum()
-    engagement_df.plot(
-        ax=ax,
-        lw=2,
-        ylabel="count"
-    )
-    
-def calc_y_timeline(data):
-    ys = [[] for _ in range(len(data))]
-    seen_x = []
-    for i in range(len(data)):
-        for x in data[i]:
-            ys[i].append(-1 * seen_x.count(x))
-            seen_x.append(x)
-    return ys
 
-def date_highlights(readme_history, contents, metadata, paper_data, ax, overlay_ax):
+# TODO
+def date_highlights(readme_history, contents, metadata, paper_data):
+    # TODO: rewrite as timeline df?
     df = pd.merge(metadata, readme_history, on="github_user_cleaned_url")
     df.dropna(subset=["author_date"], inplace=True)
     df["authored_in_week_since_creation"] = (df.author_date - df.created_at).dt.days // 7
@@ -269,77 +295,101 @@ def date_highlights(readme_history, contents, metadata, paper_data, ax, overlay_
     contributing_file_added = contents_df[contents_df.contributing_added.notna()].contributing_added
     # paper publication
     paper_published = paper_df[paper_df.date.notna()].date
-    # plotting
-    ax.set(ylim=(-6, 0.4), yticks=[])
-    ax.set_xlabel("weeks since repository creation", loc="right")
-    ax.xaxis.set_label_position('top')
-    ax.xaxis.tick_top()
-    ax.spines['right'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    data = [ownership_added, usage_added, citation_added, citation_file_added, contributing_file_added, paper_published]
-    ys = calc_y_timeline(data)
-    labels = ["ownership heading", "usage heading", "citation in README", "citation file", "contributing file", "mention in publication"]
-    prop_cycle = plt.rcParams['axes.prop_cycle']
-    colors = prop_cycle.by_key()['color']
-    ymax = 86
-    for i in range(len(data)):
-        ax.scatter(data[i], ys[i], marker="^", s=100, label=labels[i], color=colors[i])
-        overlay_ax.vlines(data[i], ys[i], ymax, linestyles='dashed', color=colors[i])
 
-def main(repo, dir, output_dir, verbose):
-    info(verbose, f"Loading data for repo {repo}...")
-    contents = load_data(dir, "contents.csv", repo, ["citation_added", "contributing_added"])
-    contributions = load_data(dir, "contributions.csv", repo, "week_co")
-    forks = load_data(dir, "forks.csv", repo, "date")
-    issues = load_data(dir, "issues.csv", repo, ["created_at", "closed_at"])
-    metadata = load_data(dir, "metadata.csv", repo, "created_at")
-    readme_history = load_data(dir, "readme_history.csv", repo, "author_date")
-    stars = load_data(dir, "stars.csv", repo, "date")
-    paper_data = load_data(os.path.join(dir, "cleaned_links"), "joined.csv", repo, "date")
+def timelines_init(metadata, contents, contributions, forks, stars, issues, readme_history):
+    """Prepare timelines dataframe with one row for each "week of life" of each GitHub repository.
+
+    Args:
+        metadata (pd.DataFrame): respective dataframe with aggregated columns "week_since_repo_creation_{original_column_name}"
+        contents (pd.DataFrame): respective dataframe with aggregated columns "week_since_repo_creation_{original_column_name}"
+        contributions (pd.DataFrame): respective dataframe with aggregated columns "week_since_repo_creation_{original_column_name}"
+        forks (pd.DataFrame): respective dataframe with aggregated columns "week_since_repo_creation_{original_column_name}"
+        stars (pd.DataFrame): respective dataframe with aggregated columns "week_since_repo_creation_{original_column_name}"
+        issues (pd.DataFrame): respective dataframe with aggregated columns "week_since_repo_creation_{original_column_name}"
+        readme_history (pd.DataFrame): respective dataframe with aggregated columns "week_since_repo_creation_{original_column_name}"
+
+    Returns:
+        pd.DataFrame: dataframe with columns "github_user_cleaned_url" and "weeks_since_repo_creation"
+    """
+    def merge_max_weeks(max_week_df, df, week_col, name):
+        if type(week_col) == str:
+            max_series = df.groupby("github_user_cleaned_url")[week_col].max().rename(name)
+        elif type(week_col) == list:
+            max_series = df.groupby("github_user_cleaned_url")[week_col].max().fillna(0).max(axis=1).rename(name)
+        max_week_df = pd.merge(max_week_df, max_series, how="left", left_on="github_user_cleaned_url", right_index=True)
+        return max_week_df
+    # determine max week from all dataframes
+    max_week_df = pd.DataFrame({"github_user_cleaned_url": metadata["github_user_cleaned_url"]})
+    max_week_df = merge_max_weeks(max_week_df, contents, ["week_since_repo_creation_citation_added", "week_since_repo_creation_contributing_added"], "max_week_contents")
+    max_week_df = merge_max_weeks(max_week_df, contributions, "week_since_repo_creation_week_co", "max_week_contributions")
+    max_week_df = merge_max_weeks(max_week_df, forks, "week_since_repo_creation_date", "max_week_forks")
+    max_week_df = merge_max_weeks(max_week_df, stars, "week_since_repo_creation_date", "max_week_stars")
+    max_week_df = merge_max_weeks(max_week_df, issues, ["week_since_repo_creation_created_at", "week_since_repo_creation_closed_at"], "max_week_issues")
+    max_week_df = merge_max_weeks(max_week_df, readme_history, "week_since_repo_creation_author_date", "max_week_readme_history")
+    max_week_df = max_week_df.fillna(0)
+    # determine overall max week
+    max_week_df = max_week_df.set_index("github_user_cleaned_url").max(axis=1).rename("max_week").astype(int).reset_index()
+    # add entry for each repo life week
+    max_week_df["weeks_since_repo_creation"] = max_week_df["max_week"].map(lambda end: np.arange(end+1))
+    timelines_df = max_week_df.explode("weeks_since_repo_creation").drop("max_week", axis=1)
+    timelines_df = timelines_df.set_index("github_user_cleaned_url")
+    return timelines_df
+
+def main(dir, verbose):
+    info(verbose, f"Loading data...")
+    metadata = load_data(dir, "metadata.csv", "created_at")
+    contents = load_data(dir, "contents.csv", ["citation_added", "contributing_added"])
+    contributions = load_data(dir, "contributions.csv", "week_co")
+    forks = load_data(dir, "forks.csv", "date")
+    stars = load_data(dir, "stars.csv", "date")
+    issues = load_data(dir, "issues.csv", ["created_at", "closed_at"])
+    readme_history = load_data(dir, "readme_history.csv", "author_date")
+    paper_data = load_data(os.path.join(dir, "cleaned_links"), "joined.csv", "date")
     info(verbose, "Data loading complete.")
 
-    analysis_end_date = contributions.week_co.max() + timedelta(days=7)
+    info(verbose, "Preprocessing...")
+    contents = aggregate_week_since_repo_creation(metadata, contents, ["citation_added", "contributing_added"])
+    contributions = aggregate_week_since_repo_creation(metadata, contributions, "week_co")
+    forks = aggregate_week_since_repo_creation(metadata, forks, "date")
+    stars = aggregate_week_since_repo_creation(metadata, stars, "date")
+    issues = aggregate_week_since_repo_creation(metadata, issues, ["created_at", "closed_at"])
+    readme_history = aggregate_week_since_repo_creation(metadata, readme_history, "author_date")
+    readme_history = clean_headings(readme_history)
+    # TODO: needs preprocessing, doesn't have gitub_user_cleaned_url
+    #paper_data = aggregate_week_since_repo_creation(metadata, paper_data, "date")
 
-    if len(metadata) == 0:
-        info(verbose, f"Not enough data available for {repo}.")
-        exit()
+    info(verbose, "Aggregating overall...")
+    contents = license_type(contents)
+    contents = readme_size_classification(contents)
+    engagement_df = engagement_counts(stars, forks)
+    active_contributors = team_size(contributions)
+    max_active_contributors = active_contributors.groupby("github_user_cleaned_url")["active_contributors"].max().rename("max_active_contributors")
+    overall_df = pd.merge(
+        pd.merge(
+            pd.merge(
+                metadata, contents,
+                on="github_user_cleaned_url",
+                how="left"
+            ), engagement_df,
+            on="github_user_cleaned_url",
+            how="left"
+        ), max_active_contributors,
+        how="left",
+        left_on="github_user_cleaned_url",
+        right_index=True
+    )
+    info(verbose, "Overall aggregation complete.")
 
-    fig = plt.figure(figsize=(20, 20))
-    overlay_axis = fig.subplots()
-    overlay_axis.axis('off')
-    axs = fig.subplots(nrows=6, sharex=True, height_ratios=[3, 3, 2, 2, 2, 1])
-    for ax in axs:
-        ax.patch.set_alpha(0)
-    info(verbose, "Crunching data...")
-    user_type_wrt_issues(issues, metadata, forks, stars, analysis_end_date, axs[0])
-    axs[0].legend(loc="upper right")
-    axs[0].grid(True, axis="x")
-    contributor_team(contributions, metadata, forks, stars, axs[1:3])
-    axs[1].grid(True, axis="x")
-    axs[1].legend()
-    axs[2].legend(loc="upper right")
-    axs[2].grid(True)
-    no_open_and_closed_issues(issues, metadata, analysis_end_date, axs[3])
-    axs[3].legend(loc="upper right")
-    axs[3].grid(True)
-    engagement(forks, stars, metadata, analysis_end_date, axs[4])
-    axs[4].legend(loc="upper right")
-    axs[4].grid(True)    
-    date_highlights(readme_history, contents, metadata, paper_data, axs[5], overlay_axis)
-    axs[5].legend(loc="upper right", ncols=2)
-    # final adjustments
-    ymax = 86
-    xl, xr = plt.xlim()
-    plt.xlim(xl, xr+15)
-    overlay_axis.set(xlim=(xl, xr+15), ylim=(-6, ymax))
-    fig.suptitle(repo)
-    s = repo.replace("/", "-")
-    fig.tight_layout(rect=[0, 0.03, 1, 0.98])
-    outpath = os.path.join(dir, output_dir)
-    os.makedirs(outpath, exist_ok=True)
-    plt.savefig(os.path.join(outpath, f"{s}.png"), bbox_inches="tight")
-    info(verbose, f"Plot saved in {outpath}, file {s}.png.")
+    info(verbose, "Aggregating timelines...")
+    readme_history = analyse_headings(readme_history)
+    timelines_df = timelines_init(metadata, contents, contributions, forks, stars, issues, readme_history)
+    #TODO
+    user_type_wrt_issues(issues, timelines_df)
+    #contributor_team(contributions, metadata, forks, stars)
+    #no_open_and_closed_issues(issues, metadata)
+    #engagement(forks, stars, metadata)
+    #date_highlights(readme_history, contents, metadata, paper_data)
+    info(verbose, "Timeline aggregation complete.")
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(
@@ -350,3 +400,5 @@ if __name__=="__main__":
     parser.add_argument("-v", "--verbose", action="store_true", help="enable verbose output")
     args = parser.parse_args()
     main(args.dir, args.verbose)
+    #main_timeline(args.dir, args.verbose)
+    #main_overall(args.dir, args.verbose)
