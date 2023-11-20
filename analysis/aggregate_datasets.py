@@ -31,6 +31,7 @@ def license_type(contents):
     contents = contents.copy()
     permissive_licenses = ["mit", "gpl-3.0", "apache-2.0", "bsd-3-clause", "gpl-2.0", "bsd-2-clause"] # https://en.wikipedia.org/wiki/Permissive_software_license
     contents.license = contents.license.fillna('None')
+    # TODO: refactor with np.select?
     contents["license_type"] = np.where(
         contents.license.isin(permissive_licenses), "permissive", np.where(
         contents.license == "None", "None", np.where(
@@ -63,7 +64,7 @@ def readme_size_classification(contents):
     Returns:
         pd.DataFrame: same dataframe with added column "readme_size_class".
     """
-    def map_size(byte_size):
+    def map_size(byte_size):  # TODO: refactor with np.select?
         if byte_size < 1:
             return "none"
         if byte_size < 300:
@@ -194,8 +195,16 @@ def analyse_headings(df):
     })
     return df
 
-# TODO
 def user_type_wrt_issues(issues, timelines_df):
+    """Determine issue user status (opening, closing, both, inactive).
+
+    Args:
+        issues (pd.DataFrame): dataframe with issue data
+        timelines_df (pd.DataFrame): dataframe from timeline_init
+
+    Returns:
+        pd.DataFrame: dataframe with columns "created_count", "closed_count", "status" for each user of each repo in each week of life of the repo
+    """
     # count number of created and closed issues by user + week
     created = issues.groupby(["github_user_cleaned_url", "user", "week_since_repo_creation_created_at"])["state"].count().rename("created_count")
     created.index.rename({"week_since_repo_creation_created_at": "week_since_repo_creation"}, inplace=True)
@@ -207,16 +216,19 @@ def user_type_wrt_issues(issues, timelines_df):
     # build timeline DataFrame
     # TODO: FIX MERGE BUGS
     df = pd.merge(timelines_df, issue_users_per_repo, left_index=True, right_index=True, how="left").explode("user")
-    df = df.reset_index().set_index(["github_user_cleaned_url", "weeks_since_repo_creation", "user"])
+    df = df.reset_index().set_index(["github_user_cleaned_url", "week_since_repo_creation", "user"])
+    issues_by_user = issues_by_user.set_index(["github_user_cleaned_url", "week_since_repo_creation", "user"])
     df = pd.merge(df, issues_by_user, left_index=True, right_index=True, how="left")
-    print(df)
     df.fillna(0, inplace=True)
-    #print(df)
-    ## determine user status with window of 12 weeks onwards
-    #windowed_df = df.groupby(level="user").rolling(window=12, min_periods=0).sum().droplevel(0)
-    #conditions = [(windowed_df.created_count > 0) & (windowed_df.closed_count == 0), (windowed_df.created_count == 0) & (windowed_df.closed_count > 0), (windowed_df.created_count > 0) & (windowed_df.closed_count > 0)]
-    #choices = ["opening", "closing", "both"]
-    #windowed_df["status"] = np.select(conditions, choices, default="inactive")
+    print(df.head())
+    # determine user status with window of 12 weeks onwards
+    windowed_issue_user_df = df.groupby(level="user").rolling(window=12, min_periods=0).sum().droplevel(0)
+    conditions = [(windowed_issue_user_df.created_count > 0) & (windowed_issue_user_df.closed_count == 0),
+                  (windowed_issue_user_df.created_count == 0) & (windowed_issue_user_df.closed_count > 0),
+                  (windowed_issue_user_df.created_count > 0) & (windowed_issue_user_df.closed_count > 0)]
+    choices = ["opening", "closing", "both"]
+    windowed_issue_user_df["status"] = np.select(conditions, choices, default="inactive")
+    return windowed_issue_user_df
 
 # TODO
 def contributor_team(contributions, metadata, forks, stars):
@@ -309,7 +321,7 @@ def timelines_init(metadata, contents, contributions, forks, stars, issues, read
         readme_history (pd.DataFrame): respective dataframe with aggregated columns "week_since_repo_creation_{original_column_name}"
 
     Returns:
-        pd.DataFrame: dataframe with columns "github_user_cleaned_url" and "weeks_since_repo_creation"
+        pd.DataFrame: dataframe with columns "github_user_cleaned_url" and "week_since_repo_creation"
     """
     def merge_max_weeks(max_week_df, df, week_col, name):
         if type(week_col) == str:
@@ -330,8 +342,8 @@ def timelines_init(metadata, contents, contributions, forks, stars, issues, read
     # determine overall max week
     max_week_df = max_week_df.set_index("github_user_cleaned_url").max(axis=1).rename("max_week").astype(int).reset_index()
     # add entry for each repo life week
-    max_week_df["weeks_since_repo_creation"] = max_week_df["max_week"].map(lambda end: np.arange(end+1))
-    timelines_df = max_week_df.explode("weeks_since_repo_creation").drop("max_week", axis=1)
+    max_week_df["week_since_repo_creation"] = max_week_df["max_week"].map(lambda end: np.arange(end+1))
+    timelines_df = max_week_df.explode("week_since_repo_creation").drop("max_week", axis=1)
     timelines_df = timelines_df.set_index("github_user_cleaned_url")
     return timelines_df
 
@@ -383,8 +395,8 @@ def main(dir, verbose):
     info(verbose, "Aggregating timelines...")
     readme_history = analyse_headings(readme_history)
     timelines_df = timelines_init(metadata, contents, contributions, forks, stars, issues, readme_history)
-    #TODO
-    user_type_wrt_issues(issues, timelines_df)
+    issue_users_timeline = user_type_wrt_issues(issues, timelines_df)
+    # TODO
     #contributor_team(contributions, metadata, forks, stars)
     #no_open_and_closed_issues(issues, metadata)
     #engagement(forks, stars, metadata)
