@@ -39,21 +39,27 @@ def license_type(contents):
     return contents
 
 def team_size(contributions):
-    """Count the number of active contributors for each repository over time. A user is an active contributor if they made at least one commit in last 12 weeks.
+    """Count the number of (active) contributors for each repository over time. A user is an active contributor if they made at least one commit in last 12 weeks.
 
     Args:
         contributions (pd.DataFrame): dataframe with GitHub commit data
 
     Returns:
-        pd.DataFrame: data frame where each row corresponds to one week in a repo's life and includes the number of active contributors
+        pd.DataFrame: data frame where each row corresponds to one week in a repo's life and includes the number of active contributors and overall contributors
     """
     team_df = contributions[["github_user_cleaned_url", "author", "week_since_repo_creation_week_co", "commits"]].set_index(["github_user_cleaned_url", "author", "week_since_repo_creation_week_co"]).sort_index()
     # user is active contributor if made at least one commit in last 12 weeks
-    windowed_team_df = team_df.groupby(level="author").rolling(window=12, min_periods=0).sum().droplevel(0)
+    windowed_team_df = team_df.groupby(level=["github_user_cleaned_url", "author"]).rolling(window=12, min_periods=0).sum().droplevel([0, 1])
+    final_index = windowed_team_df.index.droplevel(1).unique()
     windowed_team_df["active_contributors"] = windowed_team_df.commits > 0
     # contributor team size
-    contrib_team_size = windowed_team_df.groupby(level=["github_user_cleaned_url", "week_since_repo_creation_week_co"])["active_contributors"].value_counts()[:,:,True]
-    return contrib_team_size.reset_index()
+    contrib_team_size = windowed_team_df.groupby(level=["github_user_cleaned_url", "week_since_repo_creation_week_co"])["active_contributors"].value_counts()[:,:,True].reindex(final_index, fill_value=0).astype(int)
+    # overall pool of contributors
+    contributor_pool_df = team_df.groupby(["github_user_cleaned_url", "author"]).cumsum()
+    contributor_pool_df["contributors"] = contributor_pool_df.commits > 0
+    contrib_pool = contributor_pool_df.groupby(level=["github_user_cleaned_url", "week_since_repo_creation_week_co"])["contributors"].value_counts()[:,:,True].reindex(final_index, fill_value=0).astype(int)
+    contributors_df = pd.merge(contrib_team_size, contrib_pool, left_index=True, right_index=True)
+    return contributors_df.reset_index()
 
 def readme_size_classification(contents):
     """Classify the amount of detail in a README file based on its size. Thresholds were determined empirically.
@@ -214,13 +220,11 @@ def user_type_wrt_issues(issues, timelines_df):
     issues_by_user["week_since_repo_creation"] = issues_by_user["week_since_repo_creation"].astype(int)
     issue_users_per_repo = issues_by_user.groupby("github_user_cleaned_url")["user"].unique()
     # build timeline DataFrame
-    # TODO: FIX MERGE BUGS
     df = pd.merge(timelines_df, issue_users_per_repo, left_index=True, right_index=True, how="left").explode("user")
     df = df.reset_index().set_index(["github_user_cleaned_url", "week_since_repo_creation", "user"])
     issues_by_user = issues_by_user.set_index(["github_user_cleaned_url", "week_since_repo_creation", "user"])
     df = pd.merge(df, issues_by_user, left_index=True, right_index=True, how="left")
     df.fillna(0, inplace=True)
-    print(df.head())
     # determine user status with window of 12 weeks onwards
     windowed_issue_user_df = df.groupby(level="user").rolling(window=12, min_periods=0).sum().droplevel(0)
     conditions = [(windowed_issue_user_df.created_count > 0) & (windowed_issue_user_df.closed_count == 0),
@@ -229,25 +233,6 @@ def user_type_wrt_issues(issues, timelines_df):
     choices = ["opening", "closing", "both"]
     windowed_issue_user_df["status"] = np.select(conditions, choices, default="inactive")
     return windowed_issue_user_df
-
-# TODO
-def contributor_team(contributions, metadata, forks, stars):
-    # map dates to weeks
-    contrib_df = pd.merge(metadata[["github_user_cleaned_url", "created_at"]], contributions)
-    contrib_df["week_since_repo_creation"] = (contrib_df.week_co - contrib_df.created_at).dt.days // 7
-    team_df = contrib_df[["author", "week_since_repo_creation", "commits"]].set_index(["author", "week_since_repo_creation"]).sort_index()
-    # user is active contributor if made at least one commit in last 12 weeks
-    windowed_team_df = team_df.groupby(level="author").rolling(window=12, min_periods=0).sum().droplevel(0)
-    windowed_team_df["active contributors"] = windowed_team_df.commits > 0
-    windowed_team_df["active contributors"] = windowed_team_df["active contributors"].map({True: "active", False: "inactive"})
-    users = contributions.author.unique()
-    engagement_user_highlights(users, metadata, forks, stars)
-    # team size
-    team_size = windowed_team_df.groupby(level="week_since_repo_creation")["active contributors"].value_counts()[:,"active"].reindex(windowed_team_df.index.levels[1], fill_value=0)
-    # overall pool of contributors
-    contributor_pool_df = team_df.groupby(level="author").cumsum()
-    contributor_pool_df["contributors"] = contributor_pool_df.commits > 0
-    contrib_pool = contributor_pool_df.groupby(level="week_since_repo_creation")["contributors"].value_counts()[:,True].reindex(contributor_pool_df.index.levels[1], fill_value=0)
 
 #TODO
 def no_open_and_closed_issues(issues, metadata, analysis_end_date):
@@ -374,8 +359,8 @@ def main(dir, verbose):
     contents = license_type(contents)
     contents = readme_size_classification(contents)
     engagement_df = engagement_counts(stars, forks)
-    active_contributors = team_size(contributions)
-    max_active_contributors = active_contributors.groupby("github_user_cleaned_url")["active_contributors"].max().rename("max_active_contributors")
+    contributors = team_size(contributions)
+    max_active_contributors = contributors.groupby("github_user_cleaned_url")["active_contributors"].max().rename("max_active_contributors")
     overall_df = pd.merge(
         pd.merge(
             pd.merge(
@@ -397,7 +382,6 @@ def main(dir, verbose):
     timelines_df = timelines_init(metadata, contents, contributions, forks, stars, issues, readme_history)
     issue_users_timeline = user_type_wrt_issues(issues, timelines_df)
     # TODO
-    #contributor_team(contributions, metadata, forks, stars)
     #no_open_and_closed_issues(issues, metadata)
     #engagement(forks, stars, metadata)
     #date_highlights(readme_history, contents, metadata, paper_data)
@@ -412,5 +396,3 @@ if __name__=="__main__":
     parser.add_argument("-v", "--verbose", action="store_true", help="enable verbose output")
     args = parser.parse_args()
     main(args.dir, args.verbose)
-    #main_timeline(args.dir, args.verbose)
-    #main_overall(args.dir, args.verbose)
