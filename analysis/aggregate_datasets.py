@@ -290,28 +290,22 @@ def engagement(forks, stars, timelines_df):
     return engagement_df
 
 # TODO
-def date_highlights(readme_history, contents, metadata, paper_data):
-    # TODO: rewrite as timeline df?
-    df = pd.merge(metadata, readme_history, on="github_user_cleaned_url")
-    df.dropna(subset=["author_date"], inplace=True)
-    df["authored_in_week_since_creation"] = (df.author_date - df.created_at).dt.days // 7
-    contents_df = pd.merge(metadata, contents, on="github_user_cleaned_url")
-    contents_df.citation_added = (contents_df.citation_added - contents_df.created_at).dt.days // 7
-    contents_df.contributing_added = (contents_df.contributing_added - contents_df.created_at).dt.days // 7
-    paper_df = pd.merge(metadata, paper_data, on="github_user_cleaned_url")
-    paper_df.date = (paper_df.date - paper_df.created_at).dt.days // 7
-    # headings
-    df = analyse_headings(df)    
-    ownership_added = df[df.ownership_addition].authored_in_week_since_creation
-    usage_added = df[df.usage_addition].authored_in_week_since_creation
-    # citation in README
-    citation_added = df[(df.added_cites != "[]") & (df.added_cites.notna())].authored_in_week_since_creation
-    # citation file
-    citation_file_added = contents_df[contents_df.citation_added.notna()].citation_added
-    # contributing file
-    contributing_file_added = contents_df[contents_df.contributing_added.notna()].contributing_added
-    # paper publication
-    paper_published = paper_df[paper_df.date.notna()].date
+def date_highlights(readme_history, contents, metadata, paper_data, timelines_df):
+    """_summary_
+
+    Args:
+        readme_history (pd.DataFrame): dataframe with columns 'github_user_cleaned_url', 'week_since_repo_creation_author_date', 'ownership_addition', 'usage_addition', 'added_cites'
+        contents (pd.DataFrane): dataframe with columns 'github_user_cleaned_url', 'week_since_repo_creation_citation_added', 'week_since_repo_creation_contributing_added'
+        paper_data (pd.DataFrame): dataframe with columns 'github_user_cleaned_url', 'week_since_repo_creation_date'
+        timelines_df (pd.DataFrame): dataframe from timeline_init
+    """
+    week_ownership_added = readme_history[readme_history.ownership_addition].loc[:, ["week_since_repo_creation_author_date", "github_user_cleaned_url"]]
+    week_usage_added = readme_history[readme_history.usage_addition].loc[:, ["week_since_repo_creation_author_date", "github_user_cleaned_url"]]
+    week_citation_added = readme_history[(readme_history.added_cites != "[]") & (readme_history.added_cites.notna())].loc[:, ["week_since_repo_creation_author_date", "github_user_cleaned_url"]]
+    week_citation_file_added = contents[contents.week_since_repo_creation_citation_added.notna()].loc[:, ["week_since_repo_creation_citation_added", "github_user_cleaned_url"]]
+    week_contributing_file_added = contents[contents.week_since_repo_creation_contributing_added.notna()].loc[:, ["week_since_repo_creation_contributing_added", "github_user_cleaned_url"]]
+    week_paper_published = paper_data[paper_data.week_since_repo_creation_date.notna()].loc[:, ["week_since_repo_creation_date", "github_user_cleaned_url"]]
+    # TODO: merge with timelines, bools for columns for each of these events
 
 def timelines_init(metadata, contents, contributions, forks, stars, issues, readme_history):
     """Prepare timelines dataframe with one row for each "week of life" of each GitHub repository.
@@ -372,8 +366,7 @@ def main(dir, verbose):
     issues = aggregate_week_since_repo_creation(metadata, issues, ["created_at", "closed_at"])
     readme_history = aggregate_week_since_repo_creation(metadata, readme_history, "author_date")
     readme_history = clean_headings(readme_history)
-    # TODO: needs preprocessing, doesn't have gitub_user_cleaned_url
-    #paper_data = aggregate_week_since_repo_creation(metadata, paper_data, "date")
+    paper_data = aggregate_week_since_repo_creation(metadata, paper_data, "date")
 
     info(verbose, "Aggregating overall...")
     contents = license_type(contents)
@@ -403,9 +396,7 @@ def main(dir, verbose):
     issue_users_timeline = user_type_wrt_issues(issues, timelines_df)
     issue_counts_df = no_open_and_closed_issues(issues, timelines_df)
     engagement_df = engagement(forks, stars, timelines_df)
-    # TODO
-    #
-    #date_highlights(readme_history, contents, metadata, paper_data)
+    date_highlights(readme_history, contents, metadata, paper_data, timelines_df)
     info(verbose, "Timeline aggregation complete.")
 
 if __name__=="__main__":
