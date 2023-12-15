@@ -234,7 +234,6 @@ def user_type_wrt_issues(issues, timelines_df):
     windowed_issue_user_df["status"] = np.select(conditions, choices, default="inactive")
     return windowed_issue_user_df
 
-#TODO (notebook p 181)
 def no_open_and_closed_issues(issues, timelines_df):
     timelines_df.reset_index(inplace=True)
     # merge weeks for issue opening events
@@ -244,18 +243,17 @@ def no_open_and_closed_issues(issues, timelines_df):
     closed_issues_weekly_df = pd.merge(timelines_df, issues[["github_user_cleaned_url", "week_since_repo_creation_closed_at"]], how="outer", left_on=["github_user_cleaned_url", "week_since_repo_creation"], right_on=["github_user_cleaned_url", "week_since_repo_creation_closed_at"])
     closed_issues_weekly_df["week_since_repo_creation"].fillna(closed_issues_weekly_df["week_since_repo_creation_closed_at"], inplace=True)  # NaN will happen for issues created in negative weeks
     # cumulative counts
-    print(opened_issues_weekly_df.groupby(["github_user_cleaned_url", "week_since_repo_creation"]).cumcount())
-    # count issues
-    #timelines_df["open_issues_count"] = timelines_df.apply(lambda x: len(issues[
-    #                                                                                        (issues.week_since_repo_creation_created_at <= x.week_since_repo_creation) &
-    #                                                                                        ((issues.week_since_repo_creation_closed_at >= x.week_since_repo_creation) |
-    #                                                                                         (issues.week_since_repo_creation_closed_at.isna()))
-    #                                                                                        ]), axis=1)
-    #timelines_df["closed_issues_count"] = timelines_df.apply(lambda x: len(issues[
-    #                                                                                        (issues.week_since_repo_creation_closed_at < x.week_since_repo_creation)
-    #                                                                                        ]), axis=1)
-    #print(timelines_df.columns)
-    #print(timelines_df.head())
+    count_open = opened_issues_weekly_df.groupby(["github_user_cleaned_url", "week_since_repo_creation"])["week_since_repo_creation_created_at"].count().groupby(level=0).cumsum()
+    count_closed = closed_issues_weekly_df.groupby(["github_user_cleaned_url", "week_since_repo_creation"])["week_since_repo_creation_closed_at"].count().groupby(level=0).cumsum().rename("closed_count")
+    issue_counts_df = pd.DataFrame(count_closed)
+    issue_counts_df["open_count"] = count_open - issue_counts_df["closed_count"]
+    issue_counts_df = issue_counts_df.reset_index().astype({
+        "github_user_cleaned_url": str,
+        "week_since_repo_creation": int,
+        "closed_count": int,
+        "open_count": int
+    })
+    return issue_counts_df
     
 # TODO    
 def engagement(forks, stars, metadata, analysis_end_date):
@@ -384,7 +382,7 @@ def main(dir, verbose):
     readme_history = analyse_headings(readme_history)
     timelines_df = timelines_init(metadata, contents, contributions, forks, stars, issues, readme_history)
     issue_users_timeline = user_type_wrt_issues(issues, timelines_df)
-    no_open_and_closed_issues(issues, timelines_df)
+    issue_counts_df = no_open_and_closed_issues(issues, timelines_df)
     # TODO
     #engagement(forks, stars, metadata)
     #date_highlights(readme_history, contents, metadata, paper_data)
