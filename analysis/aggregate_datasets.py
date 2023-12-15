@@ -235,6 +235,15 @@ def user_type_wrt_issues(issues, timelines_df):
     return windowed_issue_user_df
 
 def no_open_and_closed_issues(issues, timelines_df):
+    """Build a timeline of weekly open and closed issue counts.
+
+    Args:
+        issues (pd.DataFrame): dataframe with issue data
+        timelines_df (pd.DataFrame): dataframe from timeline_init
+
+    Returns:
+        pd.DataFrame: dataframe with columns github_user_cleaned_url, week_since_repo_creation, closed_count, open_count
+    """
     timelines_df.reset_index(inplace=True)
     # merge weeks for issue opening events
     opened_issues_weekly_df = pd.merge(timelines_df, issues[["github_user_cleaned_url", "week_since_repo_creation_created_at"]], how="outer", left_on=["github_user_cleaned_url", "week_since_repo_creation"], right_on=["github_user_cleaned_url", "week_since_repo_creation_created_at"])
@@ -254,21 +263,31 @@ def no_open_and_closed_issues(issues, timelines_df):
         "open_count": int
     })
     return issue_counts_df
-    
-# TODO    
-def engagement(forks, stars, metadata, analysis_end_date):
-    forks_df = pd.merge(forks, metadata, on="github_user_cleaned_url")
-    forks_df["week_since_repo_creation"] = (forks_df.date - forks_df.created_at).dt.days // 7
-    forks_df = forks_df[["week_since_repo_creation", "user"]].groupby("week_since_repo_creation").count().rename(columns={"user": "no forks"}).sort_index()
-    stars_df = pd.merge(stars, metadata, on="github_user_cleaned_url")
-    stars_df["week_since_repo_creation"] = (stars_df.date - stars_df.created_at).dt.days // 7
-    stars_df = stars_df[["week_since_repo_creation", "user"]].groupby("week_since_repo_creation").count().rename(columns={"user": "no stars"}).sort_index()
-    end = (analysis_end_date - metadata.created_at.iloc[0]).days // 7
-    x_data = pd.Series(np.arange(end), name="week_since_repo_creation")
-    engagement_df = pd.merge(x_data, forks_df, on="week_since_repo_creation", how="outer")
-    engagement_df = pd.merge(engagement_df, stars_df, on="week_since_repo_creation", how="outer").fillna(0)
-    engagement_df = engagement_df.set_index("week_since_repo_creation")
-    engagement_df = engagement_df.cumsum()
+       
+def engagement(forks, stars, timelines_df):
+    """Build a timeline of weekly forks and stars counts.
+
+    Args:
+        forks (pd.DataFrame): dataframe with fork events data
+        stars (pd.DataFrame): dataframe with star events data
+        timelines_df (pd.DataFrame): dataframe from timeline_init
+
+    Returns:
+        pd.DataFrame: dataframe with columns github_user_cleaned_url, week_since_repo_creation, forks_count, stars_count
+    """
+    forks_df = forks[["github_user_cleaned_url", "week_since_repo_creation_date", "user"]].groupby(["github_user_cleaned_url", "week_since_repo_creation_date"]).count().rename(columns={"user": "forks_count"}).sort_index()
+    stars_df = stars[["github_user_cleaned_url", "week_since_repo_creation_date", "user"]].groupby(["github_user_cleaned_url", "week_since_repo_creation_date"]).count().rename(columns={"user": "stars_count"}).sort_index()
+    engagement_df = pd.merge(timelines_df, forks_df, left_on=["github_user_cleaned_url", "week_since_repo_creation"], right_index=True, how="outer")
+    engagement_df = pd.merge(engagement_df, stars_df, left_on=["github_user_cleaned_url", "week_since_repo_creation"], right_index=True, how="outer").fillna(0)
+    engagement_df = engagement_df.set_index(["github_user_cleaned_url", "week_since_repo_creation"])
+    engagement_df = engagement_df.groupby(level=0).cumsum()
+    engagement_df = engagement_df.reset_index().astype({
+        "github_user_cleaned_url": str,
+        "week_since_repo_creation": int,
+        "forks_count": int,
+        "stars_count": int
+    })
+    return engagement_df
 
 # TODO
 def date_highlights(readme_history, contents, metadata, paper_data):
@@ -383,8 +402,9 @@ def main(dir, verbose):
     timelines_df = timelines_init(metadata, contents, contributions, forks, stars, issues, readme_history)
     issue_users_timeline = user_type_wrt_issues(issues, timelines_df)
     issue_counts_df = no_open_and_closed_issues(issues, timelines_df)
+    engagement_df = engagement(forks, stars, timelines_df)
     # TODO
-    #engagement(forks, stars, metadata)
+    #
     #date_highlights(readme_history, contents, metadata, paper_data)
     info(verbose, "Timeline aggregation complete.")
 
