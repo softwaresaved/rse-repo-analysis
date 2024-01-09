@@ -59,6 +59,7 @@ def team_size(contributions):
     contributor_pool_df["contributors"] = contributor_pool_df.commits > 0
     contrib_pool = contributor_pool_df.groupby(level=["github_user_cleaned_url", "week_since_repo_creation_week_co"])["contributors"].value_counts()[:,:,True].reindex(final_index, fill_value=0).astype(int)
     contributors_df = pd.merge(contrib_team_size, contrib_pool, left_index=True, right_index=True)
+    contributors_df.index.rename({"week_since_repo_creation_week_co": "week_since_repo_creation"}, inplace=True)
     return contributors_df
 
 def readme_size_classification(contents):
@@ -248,6 +249,7 @@ def user_type_wrt_commits(contributions):
     # user is active contributor if made at least one commit in last 12 weeks
     windowed_team_df = team_df.groupby(level=["github_user_cleaned_url", "author"]).rolling(window=12, min_periods=0).sum().droplevel([0, 1])
     windowed_team_df["active_contributors"] = windowed_team_df.commits > 0
+    windowed_team_df.index.rename({"week_since_repo_creation_week_co": "week_since_repo_creation"}, inplace=True)
     return windowed_team_df
 
 def no_open_and_closed_issues(issues, timelines_df):
@@ -422,7 +424,6 @@ def main(dir, verbose):
     info(verbose, "Aggregating timelines...")
     readme_history = analyse_headings(readme_history)
     timelines_df = timelines_init(metadata, contents, contributions, forks, stars, issues, readme_history)
-    # index URL, week, user
     issue_users_timeline_df = user_type_wrt_issues(issues, timelines_df)
     commit_authors_timeline_df = user_type_wrt_commits(contributions)
     issue_users_timeline_df.to_csv(os.path.join(dir, "aggregated_issue_user_timeline.csv"))
@@ -432,7 +433,12 @@ def main(dir, verbose):
     highlights_df = date_highlights(readme_history, contents, paper_data, timelines_df)
     overall_timeline_df = pd.merge(
         pd.merge(
-            issue_counts_df, engagement_df,
+            pd.merge(
+                issue_counts_df, contributors,
+                left_index=True,
+                right_index=True,
+                how="left"
+            ), engagement_df,
             left_index=True,
             right_index=True,
             how="left"
