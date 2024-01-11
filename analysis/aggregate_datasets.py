@@ -431,6 +431,8 @@ def main(dir, verbose):
     issue_counts_df = no_open_and_closed_issues(issues, timelines_df)
     engagement_df = engagement(forks, stars, timelines_df)
     highlights_df = date_highlights(readme_history, contents, paper_data, timelines_df)
+    contributors = pd.merge(timelines_df, contributors, how="left", left_index=True, right_index=True)
+    contributors.fillna(value={"active_contributors": 0, "contributors": 0}, inplace=True)
     overall_timeline_df = pd.merge(
         pd.merge(
             pd.merge(
