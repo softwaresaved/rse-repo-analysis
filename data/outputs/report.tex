@@ -1,4 +1,6 @@
-\documentclass[10pt,a4paper]{article}
+\documentclass[10pt,a4paper]{scrartcl}
+
+\setkomafont{disposition}{\rmfamily}
 
 \usepackage[utf8]{inputenc}
 \usepackage{hyperref}
@@ -17,14 +19,183 @@
 \begin{document}
 
 \title{Report}
+\subtitle{Study of RSE GitHub repositories}
 \author{Kara Moraw}
-\date{}
+\date{\today}
 \maketitle
 
-\section*{Assignment X}
+\section*{Motivation}
 
+We want to investigate how research software projects have changed over time, how they evolve and how they differ between disciplines by analysing relevant software repositories.
+This will help us gain a better understanding of ongoing processes in the research software community and of how they can be supported.
+It will also supply evidence about which practices aid to build and maintain software with a wider community engagement.
 
-\bibliographystyle{plain}
-\bibliography{literature}
+\subsection*{Hypothesis}
+
+The following is not meant to be a fixed set of things we want to find, but rather some ideas that may help guide what data is worth collecting.
+We hypothesise that
+\begin{enumerate}
+    \item research software repositories evolve in four stages
+    \begin{enumerate}
+        \item \textit{no engagement:} sparse commits, no issues, few authors, no license, no DOI citation
+        \item \textit{publication:} DOI, license, usage guidelines, some watchers/stars, some issues created and resolved by repository maintainers
+        \item \textit{low engagement:} external users create issues, maintainers resolve issues, forks
+        \item \textit{community engagement:} external users create and resolve issues, merge requests
+    \end{enumerate}
+    \item research software repositories that employ good practices reach higher stages (earlier)
+\end{enumerate}
+
+Can we find markers that indicate transition into the next phase?
+
+\section*{Methods}
+
+\textbf{TODO: }see wiki and \verb|data/analysis/notes.md| for notes.
+
+\subsection*{Data Collection}
+
+\begin{itemize}
+    \item describe
+    \item share schemas
+\end{itemize}
+
+\subsection*{Data Aggregation}
+
+\begin{itemize}
+    \item combining repo data
+    \item citation intent classification
+    \begin{itemize}
+        \item considered only links found on first two pages to find more that are likely to be subject of publication
+        \item section analysis would be similar but out of scope
+        \item did not validate how many created software is linked on later pages
+        \item other ideas for classifying: more than one mention could point to used, age of software repo (requires additional input, see findings)
+    \end{itemize}
+    \item share schemas of new tables
+\end{itemize}
+
+\section*{Limitations}
+
+\begin{itemize}
+    \item Issues can be normal issues or PRs.
+    \item PRs are not shown as commits: when someone makes a PR with multiple commits, merging this PR does not count as a commit itself, so it doesn't show up for the person merging it (that's the person closing the issue) and the commits that belonged to the PR do not show up either. Commits are only commits (that are not merge commits) to the main branch. This means that a good development workflow of PR, commit, merge yields NO trace in the contributor graph. (Example: \verb|incone|, has a closed PR by another user, but the graph does not show that user as a contributor.)
+    \item The publication mention date might not be ideal - it's extracted from ePrints (\verb|date| field), but maybe we should extract it from another source. Then again, the publication date is a bit arbitrary in any case due to the delay between preprints, conferences and journal publication....
+\end{itemize}
+
+\section*{Findings}
+
+\textbf{Note:} not separating results and discussion, might consider doing so later.
+
+\begin{itemize}
+    \item There are a few repos with high number of stars and decent number of forks that do not have any new contributors. None of the repos seem to use issues a lot, mostly for bug fixing (i.e. open shortly)? Maybe people are more inclined to contribute with a CONTRIBUTING file and some inviting tags like "good first issue" etc.
+    \item ML repos might lead to higher engagement per default, I think (haven't validated) that the one-person repos with some engagement usually had to do with ML.
+\end{itemize}
+
+\subsection*{Software relevance}
+
+\begin{itemize}
+    \item plots about GH URLs in ePrints
+    \item percentage of URLs might not be huge, but has steadily increased
+\end{itemize}
+
+\subsection*{Mention type}
+
+\begin{itemize}
+    \item age in terms of repo
+    \begin{itemize}
+        \item if repo older, more likely to be a reference than new software
+        \item over the years, software seems to be mentioned earlier in a publication (both created and used?)
+        \begin{itemize}
+            \item caution: might be biased because a larger time span is available for analysis of older software
+        \end{itemize}
+        \item \textbf{TODO: }quantify instead of only looking at the graph
+    \end{itemize}
+\end{itemize}
+
+\subsection*{Overall analysis}
+\begin{itemize}
+    \item \textbf{TODO: }adjust repo timelines to sort issue and contributor user plots by first date to make the visualisation more intuitive
+    \item \textbf{TODO: }plot timelines together for high interest repos, or by category?
+\end{itemize}
+
+\begin{itemize}
+    \item used vs. created differ wrt. team size
+    \item high interest in contrast to other repos:
+    \begin{itemize}
+        \item no short READMEs
+        \item citation emerges as a frequent README heading, as well as example
+    \end{itemize}
+    \item \textbf{TODO: }contrasting analysis of interest-based categories, i.e. forks, stars
+    \item worryingly large number of repos that are created for a publication but don't have a license
+    \begin{itemize}
+        \item on the positive side, non-permissive licenses are uncommon
+    \end{itemize}
+    \item one-person repos seem not to use issues even themselves
+    \begin{itemize}
+        \item of course, our categorisation is based on issue usage, so need to keep that in mind
+    \end{itemize}
+\end{itemize}
+
+\subsection*{Patterns}
+
+The main pattern seems to be 
+\begin{enumerate}
+    \item Publication
+    \item Interest
+    \item Dormant
+\end{enumerate}
+with some variations in terms of magnitude.
+
+For example, in one-person repos the interest only shows as stars. They go dormant quicker than the others.
+High-interest repositories keep interest for longer, and it takes a different form, i.e. forks, PRs contributions (see for example \verb|GazeTheWeb|). 
+Still, they go quiet after a while, meaning that the number of active contributors goes down and there is less fluctuation in the number of issues. 
+An exception is the repository \verb|nilmtk| which experiences interest in phases, i.e. not growth in interest, but decreasing interest followed by again increased interest with newer contributors.
+
+In \verb|esbmc|, we can observe two phases of interest after publication: One where the contributor pool grows slowly and then one where it grows much quicker.
+
+Mentions in publications later on (probably as related work or tool instead of "original work") often lead to a spike in stars, sometimes even in forks.
+
+The number of forks grows with the number of stars at a lower rate.
+One exception is \verb|dissect-cf|, where the number of forks is larger than that of stars.
+
+There are also a handful of repositories with apparently highly responsive owners (e.g. \verb|Dusty-evolved-starkit| and \verb|transquest|).
+Many issues are opened, but all are resolved by the owner so the contributing team does not grow.
+See caveats about this though.
+
+People who open issues and fork at the same time are usually adding a PR. These people can become contributors, i.e. make commits to the main branch.
+They don't do that when they are not interacted with though, meaning that their issues are left open.
+One example of this is \verb|MOEADr|, where issues aren't responded to and PRs aren't commented on.
+
+\subsection*{Case studies}
+
+\begin{itemize}
+    \item \verb|ethanwharris/?-convolutions|: many stars
+    \item \verb|gamesbyangelina/danesh|: stars increase at second publication, is this usage or creation?
+    \item \verb|iphowell/GeothermalModelling|: three publications, what does this say about usage?
+    \item \verb|phil?/BADDEX-Biomedical-Abbreviation-Expander|: info. RM and license, stars
+    \item \verb|IraKoshunova/folk-rnn|
+    \item \verb|MAMEN/GrazeTheWeb|: example of ebb at the end, look into README headings?
+    \item \verb|morriscb/TheWIZZ|: new contributor? what made this accessible?
+    \item \verb|tharindudr/transquest|: only owner contributes
+    \item \verb|fcampelo/MOEADr|: few contributors but loads of issue users
+    \item \verb|intelaligent/tctb|
+\end{itemize}
+
+\section*{Future?}
+
+\begin{itemize}
+    \item highlight analysis based on aggregated dataset
+    \begin{itemize}
+        \item does this relate to any of our research questions?
+        \item for one-person repos it might shed light on what's missing or what they had but didn't make a difference
+    \end{itemize}
+    \item journal affiliation
+    \item Pick out some repos (e.g. the ones mentioned as examples and a couple more) and draw the phases on them. Look at the length and start of those phases in terms of weeks: When do new contributors arrive? When does the repository go dormant?
+    \item Differentiate between inactive forks, active forks that opened a PR and active forks that didn't open a PR.
+    \item Does it help if the repository used issues from the beginning? I feel like most of the repos didn't do that, issues are start being opened once other people start engaging with the project.
+    \item Does it help to respond to people's issues and close them?
+    \item Are new people more likely to open issues if at publication date some issues had already been opened?
+\end{itemize}
+
+%\bibliographystyle{plain}
+%\bibliography{literature}
 
 \end{document}
