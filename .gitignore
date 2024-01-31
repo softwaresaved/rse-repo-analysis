@@ -150,3 +150,14 @@ data/analysis/eprints_pub
 !data/analysis/overall/*.png
 #!data/analysis/repo_timelines/*/*.png
 !data/outputs
+
+# tex
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.pdf
