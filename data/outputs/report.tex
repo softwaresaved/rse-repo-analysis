@@ -1,6 +1,6 @@
 \documentclass[10pt,a4paper]{scrartcl}
 
-\setkomafont{disposition}{\rmfamily}
+%\setkomafont{disposition}{\rmfamily}
 
 \usepackage[utf8]{inputenc}
 \usepackage{hyperref}
@@ -15,6 +15,8 @@
 
 \usepackage{tikz}
 
+\usepackage[textsize=tiny]{todonotes}  %% other options: colorinlistoftodos,prependcaption
+\usepackage{bigfoot}
 
 \begin{document}
 
@@ -24,7 +26,7 @@
 \date{\today}
 \maketitle
 
-\section*{Motivation}
+\section{Motivation}
 
 We want to investigate how research software projects have changed over time, how they evolve and how they differ between disciplines by analysing relevant software repositories.
 This will help us gain a better understanding of ongoing processes in the research software community and of how they can be supported.
@@ -47,9 +49,7 @@ We hypothesise that
 
 Can we find markers that indicate transition into the next phase?
 
-\section*{Methods}
-
-\textbf{TODO: }see wiki and \verb|data/analysis/notes.md| for notes.
+\section{Methods}
 
 \subsection*{Data Collection}
 
@@ -58,21 +58,150 @@ Can we find markers that indicate transition into the next phase?
     \item share schemas
 \end{itemize}
 
-\subsection*{Data Aggregation}
+\todo[inline]{Would need to add references to GitHub and other software used.}
+In this study, we wanted to focus on software repositories created by RSEs for their research and collect a comprehensive set of metrics.
+To find the respective repositories, we decided to scan a large set of publications available through ePrints repositories of UK universities.\todo{Could add numbers here already (number of pubs, number of repos)}
+As GitHub has been identified as the most commonly used software repository host\todo{Citation missing}, we look for links in the publication text that contain \verb|github.com|.
+We then chose a subset of the repositories found this way and use the GitHub API to collect metrics about the repositories.
+
+\subsubsection*{Scanning ePrints repositories}
+
+\todo[inline]{Add background about ePrints?}
+We scanned a total of NUMBER\todo{fill in number of publications} publications across 23 ePrints repositories. For details, see \ref{table:eprints}.
+For each repository, we used the advanced search feature to select papers published between 2010 and the date of analysis (June 2023).\todo{Add query details, i.e. kind of publication.}
+If a PDF was available, we parsed it and looked for any links to GitHub using a low-fidelity regular expression.\footnote{\verb|(?P<url>https?://(www\.)?github\.com[^\s]+)|}
+
+After extracting the links, we validated the found links:\todo{Add Number of links left after each step.}
+\begin{enumerate}
+    \item The links were matched against the standard GitHub URL pattern, where the domain is followed by a username and a repository name. This expression was also able to separate multiple links that had been detected as one expression before.\footnote{\verb|github\.com/[A-Za-z0-9-]+/[A-Za-z_\-]+|}
+    \item Next, we used the GitHub API to check that the detected user owned a repository with a name similar enough to the detected one. Specifically, we matched it against the highest scoring existing repository with a Levenshtein distance to the detected name of at least $0.7$.
+\end{enumerate}
+In the following data collection steps, we only used GitHub URLs matched in this manner.
+
+The resulting dataset is described in \ref{table:github_eprints}.
+
+\begin{table}
+    \begin{tabular}{|l|l|}
+        \hline
+        Data attribute & description \\
+        \hline 
+        \verb|eprints_repo| & ePrints repository name\\
+        \verb|title| & publication title\\
+        \verb|author_for_reference| & one of the listed authors\\
+        \verb|date| & date field for the ePrints entry of the publication\\
+        \verb|year| & year extracted from date\\
+        \verb|pdf_url| & URL of publication PDF\\
+        \verb|page_no| & number of the page where the GitHub link was found\\
+        \verb|domain_url| & GitHub link\\
+        \verb|pattern_cleaned_url| & GitHub link after advanced regular expression matching\\
+        \verb|github_user_cleaned_url| & matching existing repository on GitHub\\
+        \hline
+    \end{tabular}
+    \caption{Schema for dataset of GitHub links in publications hosted in ePrints repositories.}
+    \label{table:github_eprints}
+\end{table}
+
+\subsubsection*{Selection of relevant GitHub links}
+
+Links to GitHub repositories can be included in a publication for multiple reasons:\todo{There are publications on this, cite one here.}
+\begin{enumerate}
+    \item The authors created the software or data in the repository as part of the work carried out for the publication.
+    \item The authors used the software or data in the repository in their work for the publication, e.g. as a scientific tool or for visualisation.
+    \item The repository is cited as related work.
+\end{enumerate}
+
+For this study, we were only interested in the first kind since we can be sure that the software was written by RSEs for research.
+However, classifying a link with respect to the listed categories is non-trivial.\todo{Could add a citation here, check CZI Hackathon paper.}
+
+After reviewing a few papers manually, we found that links on the first two pages of a publication often corresponded to references of the first type,
+with authors providing a link at the end of the abstract or in a footnote linked to from the abstract or introduction.
+A mapping of links to sections would yield a similar and possibly more accurate and informative heuristic,
+but parsing sections requires more computational effort and is non-trivial for footnotes.
+Hence, we decided to continue the analysis with only those repositories that had been linked on the first two pages.
+We did not validate how many links of type 1 were found on later pages.
+
+We manually reviewed the corresponding publications and annotated this set with the labels \textit{created} (type 1) and \textit{not created} (types 2 and 3).
+Of the NUMBER repositories, we found NUMBER to be linked as software created as part of the work carried out for the publication.\todo{Fill in numbers.}
+
+\subsubsection*{Metric collection via GitHub API}
+
+For all repositories found on the first two pages, we used the GitHub API to collect a large set of data for each of the repositories:
+\todo[inline]{List collected data.}
 
 \begin{itemize}
-    \item combining repo data
-    \item citation intent classification
-    \begin{itemize}
-        \item considered only links found on first two pages to find more that are likely to be subject of publication
-        \item section analysis would be similar but out of scope
-        \item did not validate how many created software is linked on later pages
-        \item other ideas for classifying: more than one mention could point to used, age of software repo (requires additional input, see findings)
-    \end{itemize}
-    \item share schemas of new tables
+    \item repository metadata
+    \item repository contents (license, README, contributing guidelines, citation file)
+    \item commit details
+    \item issue details
+    \item changes in README headings (file history)
+    \item star and fork events
 \end{itemize}
 
-\section*{Limitations}
+The data schemas are appended in \ref{section:app_schemas_collection}.
+
+\subsection*{Data Aggregation/Analysis?}
+
+First, we added two labels to the repository metadata: \textit{license type} and \textit{readme size category}.
+License type is one of \textit{permissive}, \textit{non-permissive}, \textit{unknown} and \textit{none} (no license detected)\footnote{More info about GitHub license recognition: \url{https://docs.github.com/en/rest/licenses/licenses?apiVersion=2022-11-28}}.
+The following licenses are considered as \textit{permissive}: MIT, GPL-3.0, Apache-2.0, BSD-3-Clause, GPL-2.0 and BSD-3-Clause.
+Any other recognised license is considered \textit{non-permissive}.
+If the license is not recognised by GitHub (but there is one), it is categorised as unknown.
+The mapping of licenses to types is listed in the appendix.\todo{add list of license to type, and reference - was that Wiki?}
+The GitHub API provides the size of the README file in bytes.
+Through empirical manual evaluation, we determined five categories for READMEs indicated by their length:
+\begin{itemize}
+    \item none: No README, byte size $0$.
+    \item ultra-short: README file size is at least $1$ Byte but lower than $300$ Bytes. These are READMEs with only a title and a one-sentence description.
+    \item short: At least $300$ Bytes but lower than $1500$. These are READMEs with a longer description or one section about e.g. how to run the software.
+    \item informative: At least $1500$ Bytes but lower than $10,000$. Multiple sections covering e.g. requirements, installation and running instructions.
+    \item detailed: Over $10,000$ Bytes. Extensive documentation including images and example use cases.
+\end{itemize}
+
+Our main interest is the lifecycle of a research software repository, so we aggregated the collected data into timelines
+with respect to the age of the repository in weeks.
+
+To this end, we first mapped out the occurrence of general events in terms of repository age, calculated from the event date obtained during data collection.
+We considered the following events:
+\begin{itemize}
+    \item Ownership heading added: A commit to the README file included an addition to a headline with an ownership keyword (license, example, reference, citation, cited, publication, paper).
+    \item Usage heading added: A commit to the README file included an addition to a headline with an ownership keyword (requirements, using, example, usage, run, install, tutorial, build, guide, documentation).
+    \item Citation added: A commit to the README file included an addition to a line containing a citation indicator (\verb|DOI:|, \verb|doi.|, \verb|@article|, \verb|@misc|)
+    \item Citation file added: A \verb|citation.cff| file was created.
+    \item Contributing file added: A \verb|CONTRIBUTING.md| file was created.
+    \item Paper published: A paper available in one of the ePrints repositories that contains a link to the repository is published (based on the \verb|date| field in ePrints).
+\end{itemize}
+
+The collected fork and star events were also reshaped to map to weeks since repository creation.
+
+Finally, we created two user timeline datasets: one for contributing users (i.e. commit authors) and one for issue users.
+Both contain one line for each week in the repository lifetime and each associated user, for all repositories.
+For the contributing user timeline, we determine whether a user can be considered active in a specific week for a repository.
+A user is considered active if they have made at least one commit in the last 12 weeks.
+This is to account for pauses in development that might not mean that a contributor has left the team.
+With this information, we can look at two aspects of team size over time:
+The pool of active contributors, and the overall pool of contributors. 
+As soon as a user makes a first commit, they become a member of both pools,
+but they drop out of the active contributor pool after a phase of inactivity.
+
+We add a similar label for issue users, namely the user status. This can be
+\begin{itemize}
+    \item inactive: the user has not been engaging with issues.
+    \item opening: the user has opened at least one issue in the past 12 weeks.
+    \item closing: the user has closed at least one issue in the past 12 weeks.
+    \item both: the user has both the opening and closing status.
+\end{itemize}
+
+This process results in four output datasets:
+\begin{enumerate}
+    \item Metadata: One record per repository, containing metadata like the presence of a wiki, the license type, and the maximum observed number of active contributors in one week
+    \item Weekly timeline containing events and trends: One record per week in the life of the repository, for each repository, indicating trends like the number of stars at that point in time and events like the addition of a citation file.
+    \item Contributing user timeline: One record per each repository, user associated with the repository commit history and week in the life of the repository, indicating the user status.
+    \item Issue user timeline: One record per each repository, user associated with the repository issues and week in the life of the repository, indicating the user status.
+\end{enumerate}
+
+The schemas for the datasets are appended in \ref{section:app_schemas_output}.
+
+\section{Limitations}
 
 \begin{itemize}
     \item Issues can be normal issues or PRs.
@@ -80,7 +209,7 @@ Can we find markers that indicate transition into the next phase?
     \item The publication mention date might not be ideal - it's extracted from ePrints (\verb|date| field), but maybe we should extract it from another source. Then again, the publication date is a bit arbitrary in any case due to the delay between preprints, conferences and journal publication....
 \end{itemize}
 
-\section*{Findings}
+\section{Findings}
 
 \textbf{Note:} not separating results and discussion, might consider doing so later.
 
@@ -107,6 +236,7 @@ Can we find markers that indicate transition into the next phase?
             \item caution: might be biased because a larger time span is available for analysis of older software
         \end{itemize}
         \item \textbf{TODO: }quantify instead of only looking at the graph
+        \item other ideas for classifying: more than one mention could point to used, age of software repo (requires additional input, see findings)
     \end{itemize}
 \end{itemize}
 
@@ -179,7 +309,7 @@ One example of this is \verb|MOEADr|, where issues aren't responded to and PRs a
     \item \verb|intelaligent/tctb|
 \end{itemize}
 
-\section*{Future?}
+\section{Future?}
 
 \begin{itemize}
     \item highlight analysis based on aggregated dataset
@@ -193,9 +323,249 @@ One example of this is \verb|MOEADr|, where issues aren't responded to and PRs a
     \item Does it help if the repository used issues from the beginning? I feel like most of the repos didn't do that, issues are start being opened once other people start engaging with the project.
     \item Does it help to respond to people's issues and close them?
     \item Are new people more likely to open issues if at publication date some issues had already been opened?
+    \item could calculate timelines of CHAOSS metrics as indicators? Should have a good basis with the data we have collected and aggregated.
 \end{itemize}
 
 %\bibliographystyle{plain}
 %\bibliography{literature}
+
+\appendix
+
+\section{Data collection details}
+
+\todo[inline]{Fill this table, see GitHub issue.}
+\begin{table}[h]
+    \centering
+    \begin{tabular}{|l|r|r|}
+        \hline
+        University & number of publications & other metrics? \\
+        \hline
+        Warwick & ... & ...\\
+        \hline
+    \end{tabular}
+    \caption{ePrints repositories.}
+    \label{table:eprints}
+\end{table}
+
+\subsection*{Schemas}
+\label{section:app_schemas_collection}
+
+\todo{Add data type to schema... Not really a schema o/w.}
+
+\begin{table}
+    \centering
+    \begin{tabular}{l|l}
+        \hline
+        Data attribute & Description \\
+        \hline
+        \verb|github_user_cleaned_url| & repository ID (format \verb|<user>/<repo_name>|) \\
+        \verb|archived| & whether the repository is archived \\
+        \verb|created_at| & date of repository creation \\
+        \verb|has_wiki| & whether the repository has a wiki \\
+        \verb|has_pages| & whether the repository has GitHub pages \\
+        \hline
+    \end{tabular}
+    \caption{Schema for dataset of GitHub repository metadata.}
+    \label{table:metadata}
+\end{table}
+
+\begin{table}
+    \centering
+    \begin{tabular}{l|l}
+        \hline
+        Data attribute & Description \\
+        \hline
+        \verb|github_user_cleaned_url| & repository ID (format \verb|<user>/<repo_name>|) \\
+        \verb|license| & license type as recognised by GitHub API \\
+        \verb|readme_size| & byte size of README file \\
+        \verb|readme_path| & path to README file (usually \verb|./README.md|) \\
+        \verb|readme_emojis| & number of emojis used in the README file \\
+        \verb|contributing_size| & size of \verb|CONTRIBUTING.md| \\
+        \verb|citation_added| & date that a \verb|CITATION.cff| file was added \\
+        \verb|contributing_added| & date that a \verb|CONTRIBUTING.md| file was added \\
+        \hline
+    \end{tabular}
+    \caption{Schema for dataset of GitHub repository contents.}
+    \label{table:contents}
+\end{table}
+
+\begin{table}
+    \centering
+    \begin{tabular}{l|l}
+        \hline
+        Data attribute & Description \\
+        \hline
+        \verb|github_user_cleaned_url| & repository ID (format \verb|<user>/<repo_name>|) \\
+        \verb|author| & user ID of commit author \\
+        \verb|week_co| & date of start a week \\
+        \verb|commits| & number of commits the author made in that week \\
+        \hline
+    \end{tabular}
+    \caption{Schema for dataset of GitHub repository contributions.}
+    \label{table:contributions}
+\end{table}
+
+\begin{table}
+    \centering
+    \begin{tabular}{l|l}
+        \hline
+        Data attribute & Description \\
+        \hline
+        \verb|github_user_cleaned_url| & repository ID (format \verb|<user>/<repo_name>|) \\
+        \verb|state| & issue state at date of crawling (June 2023) \\
+        \verb|created_at| & date of issue creation \\
+        \verb|user| & user ID of issue author \\
+        \verb|closed_at| & date the issue was closed (can be empty) \\
+        \verb|closed_by| & user ID of user who closed the issue (can be empty) \\
+        \hline
+    \end{tabular}
+    \caption{Schema for dataset of GitHub repository issues.}
+    \label{table:issues}
+\end{table}
+
+\begin{table}
+    \centering
+    \begin{tabular}{l|l}
+        \hline
+        Data attribute & Description \\
+        \hline
+        \verb|github_user_cleaned_url| & repository ID (format \verb|<user>/<repo_name>|) \\
+        \verb|readme_path| & path to README file (usually \verb|./README.md|) \\
+        \verb|author_date| & date of commit to README \\
+        \verb|added_headings| & new headings \\
+        \verb|deleted_headings| & removed headings \\
+        \verb|added_cites| & new citation info (DOI etc.) \\
+        \hline
+    \end{tabular}
+    \caption{Schema for dataset of GitHub repository README file history, considering only changes to headings. Note that only headings beginning with \texttt{\#} are parsed, not those with \texttt{===} underneath.}
+    \label{table:readme_headings}
+\end{table}
+
+\begin{table}
+    \centering
+    \begin{tabular}{l|l}
+        \hline
+        Data attribute & Description \\
+        \hline
+        \verb|github_user_cleaned_url| & repository ID (format \verb|<user>/<repo_name>|) \\
+        \verb|date| & date of star \\
+        \verb|user| & user ID of user that starred the repository \\
+        \hline
+    \end{tabular}
+    \caption{Schema for dataset of GitHub repository star events.}
+    \label{table:stars}
+\end{table}
+
+\begin{table}
+    \centering
+    \begin{tabular}{l|l}
+        \hline
+        Data attribute & Description \\
+        \hline
+        \verb|github_user_cleaned_url| & repository ID (format \verb|<user>/<repo_name>|) \\
+        \verb|date| & date of fork \\
+        \verb|user| & user ID of user that forked the repository \\
+        \hline
+    \end{tabular}
+    \caption{Schema for dataset of GitHub repository fork events.}
+    \label{table:forks}
+\end{table}
+
+\section{Schemas for output datasets}
+\label{section:app_schemas_output}
+
+\todo{Add data type to schema... Not really a schema o/w.}
+
+\begin{table}
+    \centering
+    \begin{tabular}{|l|l|}
+        \hline
+        Data attribute & Description \\
+        \hline
+        \verb|github_user_cleaned_url| & repository ID (format \verb|<user>/<repo_name>|) \\
+        \verb|archived| & whether the repository is archived \\
+        \verb|created_at| & date of repository creation \\
+        \verb|has_wiki| & whether the repository has a wiki \\
+        \verb|has_pages| & whether the repository has GitHub pages \\
+        \verb|license| & license type as recognised by GitHub API \\
+        \verb|readme_size| & byte size of README file \\
+        \verb|readme_path| & path to README file (usually \verb|./README.md|) \\
+        \verb|readme_emojis| & number of emojis used in the README file \\
+        \verb|contributing_size| & size of \verb|CONTRIBUTING.md| \\
+        \verb|citation_added| & date that a \verb|CITATION.cff| file was added \\
+        \verb|contributing_added| & date that a \verb|CONTRIBUTING.md| file was added \\
+        \verb|week_since_repo_creation_citation_added| & number of weeks since creation of the repository when a citation file was first added.\\
+        \verb|week_since_repo_creation_contributing_added| & number of weeks since creation of the repository when contributing guidelines were first added.\\
+        \verb|license_type| & permissive, non-permissive, unknown or None\\
+        \verb|readme_size_class| & categorisation of the README size based on the size in bytes (classes were determined empirically). One of ultra-short, short, informative, detailed.\\
+        \verb|forks_count| & number of forks the repository had at date of analysis (June 2023) \\
+        \verb|stars_count| & number of stars the repository had at date of analysis (June 2023) \\
+        \verb|max_active_contributors| & maximum number of contributors considered active at the same time \\
+        \hline
+    \end{tabular}
+    \caption{Schema for dataset of aggregated overall information.}
+    \label{table:schema_agg_overall}
+\end{table}
+
+\begin{table}
+    \centering
+    \begin{tabular}{|l|l|}
+        \hline
+        Data attribute & Description \\
+        \hline
+        \verb|github_user_cleaned_url| & repository ID (format \verb|<user>/<repo_name>|) \\
+        \verb|week_since_repo_creation| & running week number for each week in the life of each repository (from creation until date of analysis) \\
+        \verb|closed_count| & number of closed issues in that week for that repository \\
+        \verb|open_count| & number of open issues in that week for that repository \\
+        \verb|active_contributors| & number of active contributors in that week for that repository \\
+        \verb|contributors| & number of contributors so far (includes inactive) \\
+        \verb|forks_count| & number of forks in that week for that repository \\
+        \verb|stars_count| & number of stars in that week for that repository \\
+        \verb|ownership_added| & whether a heading with an ownership keyword was added in that week for that repository \\
+        \verb|usage_added| & whether a heading with a usage keyword was added in that week for that repository \\
+        \verb|citation_added| & whether a citation keyword was added to the README in that week for that repository \\
+        \verb|citation_file_added| & whether a citation file was added in that week for that repository\\
+        \verb|contributing_file_added| & whether contributing guidelines were added in that week for that repository \\
+        \verb|paper_published| & whether a paper linking to this repository was published in that week for that repository \\
+        \hline
+    \end{tabular}
+    \caption{Schema for dataset of aggregated timelines.}
+    \label{table:schema_agg_timelines}
+\end{table}
+
+\begin{table}
+    \centering
+    \begin{tabular}{|l|l|}
+        \hline
+        Data attribute & Description \\
+        \hline
+        \verb|github_user_cleaned_url| & repository ID (format \verb|<user>/<repo_name>|) \\
+        \verb|author| & user ID of commit author \\
+        \verb|week_since_repo_creation| & running week number for each week in the life of each repository (from creation until date of analysis) \\
+        \verb|commits| & number of commits made by the user that week to this repository \\
+        \verb|active_contributors| & whether the user is considered an active contributor that week \\
+        \hline
+    \end{tabular}
+    \caption{Schema for dataset of aggregated commit author timelines.}
+    \label{table:schema_agg_commit_author}
+\end{table}
+
+\begin{table}
+    \centering
+    \begin{tabular}{|l|l|}
+        \hline
+        Data attribute & Description \\
+        \hline
+        \verb|github_user_cleaned_url| & repository ID (format \verb|<user>/<repo_name>|) \\
+        \verb|week_since_repo_creation| & running week number for each week in the life of each repository (from creation until date of analysis) \\
+        \verb|user| & user ID of someone interacting with issues \\
+        \verb|created_count| & number of issues created by that user that week for that repository \\
+        \verb|closed_count| & number of issues closed by that user that week for that repository \\
+        \verb|user_status| & whether the user is inactive, opening issues, closing issues or both opening and closing issues \\
+        \hline
+    \end{tabular}
+    \caption{Schema for dataset of aggregated issue user timelines.}
+    \label{table:schema_agg_issue_users}
+\end{table}
 
 \end{document}
