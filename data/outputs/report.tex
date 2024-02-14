@@ -53,11 +53,6 @@ Can we find markers that indicate transition into the next phase?
 
 \subsection*{Data Collection}
 
-\begin{itemize}
-    \item describe
-    \item share schemas
-\end{itemize}
-
 \todo[inline]{Would need to add references to GitHub and other software used.}
 In this study, we wanted to focus on software repositories created by RSEs for their research and collect a comprehensive set of metrics.
 To find the respective repositories, we decided to scan a large set of publications available through ePrints repositories of UK universities.\todo{Could add numbers here already (number of pubs, number of repos)}
@@ -203,11 +198,16 @@ The schemas for the datasets are appended in \ref{section:app_schemas_output}.
 
 \section{Limitations}
 
-\begin{itemize}
-    \item Issues can be normal issues or PRs.
-    \item PRs are not shown as commits: when someone makes a PR with multiple commits, merging this PR does not count as a commit itself, so it doesn't show up for the person merging it (that's the person closing the issue) and the commits that belonged to the PR do not show up either. Commits are only commits (that are not merge commits) to the main branch. This means that a good development workflow of PR, commit, merge yields NO trace in the contributor graph. (Example: \verb|incone|, has a closed PR by another user, but the graph does not show that user as a contributor.)
-    \item The publication mention date might not be ideal - it's extracted from ePrints (\verb|date| field), but maybe we should extract it from another source. Then again, the publication date is a bit arbitrary in any case due to the delay between preprints, conferences and journal publication....
-\end{itemize}
+The GitHub API includes pull requests in issues, so in our datasets, issues might be both.
+We cannot distinguish the two in our dataset.
+
+The contribution dataset only includes commits to the main branch and doesn't include commits that merge a pull request, neither for the user merging the PR nor for the users that contributed to the PR.
+In our analysis, a good development workflow of opening a PR, committing to it, and merging it does not get picked up.
+
+Finally, we interpret the date field extracted from ePrints as the publication date.
+This might not always be correct as the definition for this field doesn't seem to explicitly relate to the publication,
+and it is unclear whether it refers to the presentation at a conference, the publication of a preprint or the journal publication.
+However, we expect it to be a good enough approximation. 
 
 \section{Findings}
 
