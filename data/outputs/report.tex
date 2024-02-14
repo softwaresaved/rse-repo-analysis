@@ -62,7 +62,7 @@ We then chose a subset of the repositories found this way and use the GitHub API
 \subsubsection*{Scanning ePrints repositories}
 
 \todo[inline]{Add background about ePrints?}
-We scanned a total of NUMBER\todo{fill in number of publications} publications across 23 ePrints repositories. For details, see \ref{table:eprints}.
+We scanned a total of NUMBER\todo{fill in number of publications} publications across 23 ePrints repositories. For details, see table \ref{table:eprints}.
 For each repository, we used the advanced search feature to select papers published between 2010 and the date of analysis (June 2023).\todo{Add query details, i.e. kind of publication.}
 If a PDF was available, we parsed it and looked for any links to GitHub using a low-fidelity regular expression.\footnote{\verb|(?P<url>https?://(www\.)?github\.com[^\s]+)|}
 
@@ -73,7 +73,7 @@ After extracting the links, we validated the found links:\todo{Add Number of lin
 \end{enumerate}
 In the following data collection steps, we only used GitHub URLs matched in this manner.
 
-The resulting dataset is described in \ref{table:github_eprints}.
+The resulting dataset is described in table \ref{table:github_eprints}.
 
 \begin{table}
     \begin{tabular}{|l|l|}
@@ -132,7 +132,7 @@ For all repositories found on the first two pages, we used the GitHub API to col
     \item star and fork events
 \end{itemize}
 
-The data schemas are appended in \ref{section:app_schemas_collection}.
+The data schemas are appended in appendix \ref{section:app_schemas_collection}.
 
 \subsection*{Data Aggregation/Analysis?}
 
@@ -194,7 +194,7 @@ This process results in four output datasets:
     \item Issue user timeline: One record per each repository, user associated with the repository issues and week in the life of the repository, indicating the user status.
 \end{enumerate}
 
-The schemas for the datasets are appended in \ref{section:app_schemas_output}.
+The schemas for the datasets are appended in appendix \ref{section:app_schemas_output}.
 
 \section{Limitations}
 
