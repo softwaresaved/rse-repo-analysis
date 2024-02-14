@@ -15,7 +15,7 @@
 
 \usepackage{tikz}
 
-\usepackage[textsize=tiny]{todonotes}  %% other options: colorinlistoftodos,prependcaption
+\usepackage[]{todonotes}  %% other options: colorinlistoftodos,prependcaption,textsize=tiny
 \usepackage{bigfoot}
 
 \begin{document}
@@ -97,6 +97,7 @@ The resulting dataset is described in table \ref{table:github_eprints}.
 \end{table}
 
 \subsubsection*{Selection of relevant GitHub links}
+\label{section:select_links}
 
 Links to GitHub repositories can be included in a publication for multiple reasons:\todo{There are publications on this, cite one here.}
 \begin{enumerate}
@@ -113,7 +114,8 @@ with authors providing a link at the end of the abstract or in a footnote linked
 A mapping of links to sections would yield a similar and possibly more accurate and informative heuristic,
 but parsing sections requires more computational effort and is non-trivial for footnotes.
 Hence, we decided to continue the analysis with only those repositories that had been linked on the first two pages.
-We did not validate how many links of type 1 were found on later pages.
+We did not validate how many links of type 1 were found on later pages,
+but would expect that methods sections would contain links of both types.
 
 We manually reviewed the corresponding publications and annotated this set with the labels \textit{created} (type 1) and \textit{not created} (types 2 and 3).
 Of the NUMBER repositories, we found NUMBER to be linked as software created as part of the work carried out for the publication.\todo{Fill in numbers.}
@@ -197,6 +199,7 @@ This process results in four output datasets:
 The schemas for the datasets are appended in appendix \ref{section:app_schemas_output}.
 
 \section{Limitations}
+\label{section:limits}
 
 The GitHub API includes pull requests in issues, so in our datasets, issues might be both.
 We cannot distinguish the two in our dataset.
@@ -210,59 +213,159 @@ and it is unclear whether it refers to the presentation at a conference, the pub
 However, we expect it to be a good enough approximation. 
 
 \section{Findings}
-
-\textbf{Note:} not separating results and discussion, might consider doing so later.
+\todo[inline]{Not separating results and discussion yet, might consider doing so later.}
 
 \begin{itemize}
     \item There are a few repos with high number of stars and decent number of forks that do not have any new contributors. None of the repos seem to use issues a lot, mostly for bug fixing (i.e. open shortly)? Maybe people are more inclined to contribute with a CONTRIBUTING file and some inviting tags like "good first issue" etc.
     \item ML repos might lead to higher engagement per default, I think (haven't validated) that the one-person repos with some engagement usually had to do with ML.
 \end{itemize}
 
-\subsection*{Software relevance}
+\subsection*{Software mentions}
 
-\begin{itemize}
-    \item plots about GH URLs in ePrints
-    \item percentage of URLs might not be huge, but has steadily increased
-\end{itemize}
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[t]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../analysis/overall/github_in_eprints.png}
+        \caption{In blue, the number of GitHub links found across all publications per year. In orange, the number of publications.}
+        \label{fig:gh_in_ep_no}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../analysis/overall/avg_github_in_eprints.png}
+        \caption{Average number of GitHub links in one publication.}
+        \label{fig:gh_ep_mean}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.3\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../analysis/overall/min_one_github_in_eprints.png}
+        \caption{How many publications in a year contained at least one GitHub link.
+        Those that did are displayed in orange bars, those that did not contain a single link are shown in blue bars.
+        Note that the y-axis scales logarithmically.
+        On top of the bars is the percentage of the total number of publications represented by the bar.}
+        \label{fig:gh_ep_min_one}
+    \end{subfigure}
+       \caption{GitHub links in ePrints publications over time.}
+       \label{fig:gh_ep}
+\end{figure}
+
+Figure \ref{fig:gh_ep} shows that even though the number of GitHub links included in ePrints publications is small,
+it has steadily increased in the past 13 years.
+The main driver could be that software becomes ever more important across a variety of research domains,
+but the developments also indicate that referencing software code has become more common.
 
 \subsection*{Mention type}
 
-\begin{itemize}
-    \item age in terms of repo
-    \begin{itemize}
-        \item if repo older, more likely to be a reference than new software
-        \item over the years, software seems to be mentioned earlier in a publication (both created and used?)
-        \begin{itemize}
-            \item caution: might be biased because a larger time span is available for analysis of older software
-        \end{itemize}
-        \item \textbf{TODO: }quantify instead of only looking at the graph
-        \item other ideas for classifying: more than one mention could point to used, age of software repo (requires additional input, see findings)
-    \end{itemize}
-\end{itemize}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{../analysis/overall/mention_type_timeline.png}
+    \caption{Mention type indicated by dot colour plotted against repository age at time of publication.}
+    \label{fig:mention_type_time}
+\end{figure}
+
+As described in section \ref{section:select_links}, we manually annotated links found on the first two pages of a publication as \textit{created} or \textit{referenced}.
+Figure \ref{fig:mention_type_time} shows that links for software that has been created three years before publication are usually references and not created as part of the publication.
+Interestingly, from 2019 forward, links that are older than one year also tend to be references and not creations,
+suggesting that the time between software being published and picked up on by the community might have shortened. 
+From 2020 forward, a much larger portion of the software is of the \textit{created} type and published earlier (within a year),
+indicating that researchers create and link their software more since then.
+However, this analysis might be biased because a larger time span is available for older software.
+
+\todo[inline]{Ideally, quantify these analyses instead of 'just' looking at the graph.}
+
+The graph suggests that the age of the repository at time of publication could be used as
+an indicator about how likely it is that the linked repository was created for this work or simply referenced.
+It's not fit for use as a classifier though, since the threshold seems to change from three years to only one year over the years.
+
+We also looked at classifying links as \textit{referenced} if they were detected more than once in the same publication.
+This didn't prove to be a good indicator as we only found 10 duplicate links across the whole dataset, all of which were \textit{created}.
 
 \subsection*{Overall analysis}
+
+Ideas: \todo{implement some or remove}
 \begin{itemize}
-    \item \textbf{TODO: }adjust repo timelines to sort issue and contributor user plots by first date to make the visualisation more intuitive
-    \item \textbf{TODO: }plot timelines together for high interest repos, or by category?
+    \item adjust repo timelines to sort issue and contributor user plots by first date to make the visualisation more intuitive
+    \item plot timelines together for high interest repos, or by category?
+    \item contrasting analysis of interest-based categories, i.e. forks, stars
 \end{itemize}
 
-\begin{itemize}
-    \item used vs. created differ wrt. team size
-    \item high interest in contrast to other repos:
-    \begin{itemize}
-        \item no short READMEs
-        \item citation emerges as a frequent README heading, as well as example
-    \end{itemize}
-    \item \textbf{TODO: }contrasting analysis of interest-based categories, i.e. forks, stars
-    \item worryingly large number of repos that are created for a publication but don't have a license
-    \begin{itemize}
-        \item on the positive side, non-permissive licenses are uncommon
-    \end{itemize}
-    \item one-person repos seem not to use issues even themselves
-    \begin{itemize}
-        \item of course, our categorisation is based on issue usage, so need to keep that in mind
-    \end{itemize}
-\end{itemize}
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[t]{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../analysis/overall/overall_true_positives.png}
+        \caption{All repositories cited as created software.}
+        \label{fig:overall_tp}
+    \end{subfigure}\\
+    \begin{subfigure}[t]{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../analysis/overall/overall_false_positives.png}
+        \caption{All repositories linked but not created for the publication.}
+        \label{fig:overall_fp}
+    \end{subfigure}
+    \caption{Overall statistics.}
+    \label{fig:overall_tfp}
+\end{figure}
+
+Figure \ref{fig:overall_tfp} compares different statistics between software repositories that have been mentioned as \textit{created} for the publication
+and those that have been mentioned for other reasons.
+The most notable difference is that there is a much higher proportion of repositories contributed to by only one user in the former.
+Not surprisingly, the latter have a significantly higher median number of forks and stars and tend to be older,
+indicating that software linked for reasons other than creation is usually popular.
+
+Figure \ref{fig:overall_tp} shows that a worryingly high number of repositories is created and linked as part of a scientific publication
+but does not contain a license.
+Non-permissive licenses are uncommon, but having no license is in some ways worse.
+
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[t]{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../analysis/overall/overall_one_person.png}
+        \caption{One-person repositories.}
+        \label{fig:overall_op}
+    \end{subfigure}\\
+    \begin{subfigure}[t]{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../analysis/overall/overall_in_between.png}
+        \caption{In-between repositories.}
+        \label{fig:overall_ib}
+    \end{subfigure}\\
+    \begin{subfigure}[t]{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../analysis/overall/overall_high_interest.png}
+        \caption{High-interest repositories.}
+        \label{fig:overall_hi}
+    \end{subfigure}
+    \caption{Overall statistics.}
+    \label{fig:overall_cats}
+\end{figure}
+
+In a next step, we manually assigned the repositories mentioned as \textit{created} one of three categories: \todo{rethink naming of categories ('interest' might not be ideal)}
+\begin{enumerate}
+    \item one-person repository (only one user interacts with issues and commits)
+    \item high-interest repository (more than five users interact with issues and commits) \todo{check that this definition still matches...}
+    \item in-between repository
+\end{enumerate}
+Figure \ref{fig:overall_cats} shows some notable differences between the three categories, for example that
+high-interest repositories have no short README files.
+Possibly, repositories with longer and thus more informative README files are easier for a wider community to interact with.
+On the other hand, a repository with multiple users might evolve into having a longer, more informative README file
+as multiple users need to become familiar with the software and keep up to date with any changes.
+
+Moreover,  'test' emerges as a frequent README heading in in-between repositories
+in contrast to one-person repositories,
+and 'citation' is more frequently used in README headings high-interest repositories.
+Again, it is less clear whether these are sections that are added to the README because of an increased user base,
+or whether READMEs with these headings provide better support for a growing community.
+
+Looking at the timeline graphs\todo{include timeline graphs or move this elsewhere},
+it is evident that the owners of one-person repositories tend not to use issues for their own development.
+This could be a reason for the non-existing interaction with other users:
+there are no structures in place to make contributing straightforward,
+and no indication about features currently in development.
 
 \subsection*{Patterns}
 
@@ -272,42 +375,120 @@ The main pattern seems to be
     \item Interest
     \item Dormant
 \end{enumerate}
-with some variations in terms of magnitude.
+with some variations in terms of magnitude.\todo{Add some timeline plots?}
 
-For example, in one-person repos the interest only shows as stars. They go dormant quicker than the others.
-High-interest repositories keep interest for longer, and it takes a different form, i.e. forks, PRs contributions (see for example \verb|GazeTheWeb|). 
-Still, they go quiet after a while, meaning that the number of active contributors goes down and there is less fluctuation in the number of issues. 
-An exception is the repository \verb|nilmtk| which experiences interest in phases, i.e. not growth in interest, but decreasing interest followed by again increased interest with newer contributors.
+For example, in one-person repos the interest only shows as stars.
+They go dormant quicker than the others.
+High-interest repositories keep interest for longer,
+and it takes a different form, i.e. forks, PRs contributions (see for example \verb|GazeTheWeb|). 
+Still, they go quiet after a while,
+meaning that the number of active contributors goes down and there is less fluctuation in the number of issues. 
+An exception is the repository \verb|nilmtk| which experiences interest in phases, i.e. not growth in interest,
+but decreasing interest followed by again increased interest with newer contributors.
 
-In \verb|esbmc|, we can observe two phases of interest after publication: One where the contributor pool grows slowly and then one where it grows much quicker.
+In \verb|esbmc|, we can observe two phases of interest after publication:
+One where the contributor pool grows slowly and then one where it grows much quicker.
 
-Mentions in publications later on (probably as related work or tool instead of "original work") often lead to a spike in stars, sometimes even in forks.
+Mentions in publications later on (probably as related work or tool instead of "original work")
+often lead to a spike in stars, sometimes even in forks.
 
 The number of forks grows with the number of stars at a lower rate.
 One exception is \verb|dissect-cf|, where the number of forks is larger than that of stars.
 
-There are also a handful of repositories with apparently highly responsive owners (e.g. \verb|Dusty-evolved-starkit| and \verb|transquest|).
+There are also a handful of repositories with apparently highly responsive owners
+(e.g. \verb|Dusty-evolved-starkit| and \verb|transquest|).
 Many issues are opened, but all are resolved by the owner so the contributing team does not grow.
-See caveats about this though.
+However, these issues could all be pull requests (see notes on limitations in section \ref{section:limits}).
 
-People who open issues and fork at the same time are usually adding a PR. These people can become contributors, i.e. make commits to the main branch.
+People who open issues and fork at the same time are usually adding a PR.
+These people can become contributors, i.e. make commits to the main branch.
 They don't do that when they are not interacted with though, meaning that their issues are left open.
 One example of this is \verb|MOEADr|, where issues aren't responded to and PRs aren't commented on.
 
 \subsection*{Case studies}
 
+See timelines in \ref{fig:repo_timelines}.\todo{choose fewer, write more?}
+
 \begin{itemize}
-    \item \verb|ethanwharris/?-convolutions|: many stars
+    \item \verb|ethanwharris/foveated-convolutions|: many stars
     \item \verb|gamesbyangelina/danesh|: stars increase at second publication, is this usage or creation?
-    \item \verb|iphowell/GeothermalModelling|: three publications, what does this say about usage?
-    \item \verb|phil?/BADDEX-Biomedical-Abbreviation-Expander|: info. RM and license, stars
-    \item \verb|IraKoshunova/folk-rnn|
-    \item \verb|MAMEN/GrazeTheWeb|: example of ebb at the end, look into README headings?
-    \item \verb|morriscb/TheWIZZ|: new contributor? what made this accessible?
+    \item \verb|lphowell/GeothermalModelling|: three publications, what does this say about usage?
+    \item \verb|philgooch/BADREX-Biomedical-Abbreviation-Expander|: informative README and license, stars, but still no contributors
+    \item \verb|IraKorshunova/folk-rnn|
+    \item \verb|MAMEN/GazeTheWeb|: example of ebb at the end, look into README headings?
+    \item \verb|morriscb/The-wiZZ|: new contributor? what made this accessible?
     \item \verb|tharindudr/transquest|: only owner contributes
     \item \verb|fcampelo/MOEADr|: few contributors but loads of issue users
     \item \verb|intelaligent/tctb|
 \end{itemize}
+
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[t]{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../analysis/repo_timelines/true_positives/one_user/ethanwharris-foveated-convolutions.png}
+        \caption{ethanwharris/foveated-convolutions}
+    \end{subfigure}\\
+    \begin{subfigure}[t]{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../analysis/repo_timelines/true_positives/one_user/gamesbyangelina-danesh.png}
+        \caption{gamesbyangelina/danesh}
+    \end{subfigure}\\
+\end{figure}
+\begin{figure}[h]\ContinuedFloat
+    \centering
+    \begin{subfigure}[t]{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../analysis/repo_timelines/true_positives/one_user/lphowell-Geothermal-Modelling.png}
+        \caption{lphowell/GeothermalModelling}
+    \end{subfigure}\\
+    \begin{subfigure}[t]{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../analysis/repo_timelines/true_positives/one_user/philgooch-BADREX-Biomedical-Abbreviation-Expander.png}
+        \caption{philgooch/BADREX-Biomedical-Abbreviation-Expander}
+    \end{subfigure}\\
+\end{figure}
+\begin{figure}[h]\ContinuedFloat
+    \centering
+    \begin{subfigure}[t]{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../analysis/repo_timelines/true_positives/many_users/IraKorshunova-folk-rnn.png}
+        \caption{IraKorshunova/folk-rnn}
+    \end{subfigure}\\
+    \begin{subfigure}[t]{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../analysis/repo_timelines/true_positives/many_users/MAMEM-GazeTheWeb.png}
+        \caption{MAMEN/GazeTheWeb}
+    \end{subfigure}\\
+\end{figure}
+\begin{figure}[h]\ContinuedFloat
+    \centering
+    \begin{subfigure}[t]{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../analysis/repo_timelines/true_positives/many_users/morriscb-The-wiZZ.png}
+        \caption{morriscb/The-wiZZ}
+    \end{subfigure}\\
+    \begin{subfigure}[t]{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../analysis/repo_timelines/true_positives/many_users/tharindudr-transquest.png}
+        \caption{tharindudr/transquest}
+    \end{subfigure}\\
+\end{figure}
+\begin{figure}[h]\ContinuedFloat
+    \centering
+    \begin{subfigure}[t]{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../analysis/repo_timelines/true_positives/inbetween/fcampelo-MOEADr.png}
+        \caption{fcampelo/MOEADr}
+    \end{subfigure}\\
+    \begin{subfigure}[t]{0.8\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../analysis/repo_timelines/true_positives/inbetween/intelaligent-tctb.png}
+        \caption{intelaligent/tctb}
+    \end{subfigure}\\
+    \caption{Repository timelines.}
+    \label{fig:repo_timelines}
+\end{figure}
 
 \section{Future?}
 
