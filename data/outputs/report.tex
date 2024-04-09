@@ -55,23 +55,23 @@ Can we find markers that indicate transition into the next phase?
 
 \todo[inline]{Would need to add references to GitHub and other software used.}
 In this study, we wanted to focus on software repositories created by RSEs for their research and collect a comprehensive set of metrics.
-To find the respective repositories, we decided to scan a large set of publications available through ePrints repositories of UK universities.\todo{Could add numbers here already (number of pubs, number of repos)}
+To find the respective repositories, we decided to scan a large set of publications available through ePrints repositories of UK universities.
 As GitHub has been identified as the most commonly used software repository host\todo{Citation missing}, we look for links in the publication text that contain \verb|github.com|.
 We then chose a subset of the repositories found this way and use the GitHub API to collect metrics about the repositories.
 
 \subsubsection*{Scanning ePrints repositories}
 
-\todo[inline]{Add background about ePrints?}
-We scanned a total of NUMBER\todo{fill in number of publications} publications across 23 ePrints repositories. For details, see table \ref{table:eprints}.
-For each repository, we used the advanced search feature to select papers published between 2010 and the date of analysis (June 2023).\todo{Add query details, i.e. kind of publication.}
+We scanned a total of 211,602 PDF files from ePrints entries across 16 ePrints repositories. For details, see table \ref{table:eprints}.
+For each repository, we used the advanced search feature to select papers published between 2010 and the date of analysis (June 2023). % filtered for pres_type=paper and date=2010-
 If a PDF was available, we parsed it and looked for any links to GitHub using a low-fidelity regular expression.\footnote{\verb|(?P<url>https?://(www\.)?github\.com[^\s]+)|}
 
-After extracting the links, we validated the found links:\todo{Add Number of links left after each step.}
+In this manner, we extracted a total of 2,391 links. Afterwards, we validated them against existing GitHub repositories:
 \begin{enumerate}
     \item The links were matched against the standard GitHub URL pattern, where the domain is followed by a username and a repository name. This expression was also able to separate multiple links that had been detected as one expression before.\footnote{\verb|github\.com/[A-Za-z0-9-]+/[A-Za-z_\-]+|}
     \item Next, we used the GitHub API to check that the detected user owned a repository with a name similar enough to the detected one. Specifically, we matched it against the highest scoring existing repository with a Levenshtein distance to the detected name of at least $0.7$.
 \end{enumerate}
-In the following data collection steps, we only used GitHub URLs matched in this manner.
+This left a total of 1,975 unique links.
+In the following data collection steps, we only used these validated GitHub URLs.
 
 The resulting dataset is described in table \ref{table:github_eprints}.
 
@@ -290,6 +290,8 @@ Ideas: \todo{implement some or remove}
     \item plot timelines together for high interest repos, or by category?
     \item contrasting analysis of interest-based categories, i.e. forks, stars
 \end{itemize}
+
+\todo{Almost no citations, and other works have mined GitHub for repos with a DOI...}
 
 \begin{figure}[h]
     \centering
@@ -517,14 +519,32 @@ See timelines in \ref{fig:repo_timelines}.\todo{choose fewer, write more?}
 \todo[inline]{Fill this table, see GitHub issue.}
 \begin{table}[h]
     \centering
-    \begin{tabular}{|l|r|r|}
+    \begin{tabular}{|l|r|r|r|}
         \hline
-        University & number of publications & other metrics? \\
+        ePrints repository & number of publication files & number of PDFs & unique GitHub links \\
         \hline
-        Warwick & ... & ...\\
+        clok.uclan.ac.uk & 98,206 & 23,966 & 96 \\
+        eprints.glos.ac.uk & 31,842 & 7,751 & 27 \\
+        eprints.keele.ac.uk & 58,095 & 8,852 & 197 \\
+        eprints.kingston.ac.uk & 36,071 & 6,326 & 43 \\
+        eprints.lincoln.ac.uk & 84,336 & 13,278 & 191 \\
+        eprints.nottingham.ac.uk & 107,501 & 21,615 & 129 \\
+        eprints.soton.ac.uk & 7,317 & 6,488 & 140 \\
+        eprints.worc.ac.uk & 22,062 & 3,569 & 21 \\
+        irep.ntu.ac.uk & 74,071 & 12,180 & 148 \\
+        openaccess.city.ac.uk & 127,146 & 38,083 & 292 \\
+        publications.aston.ac.uk & 51,830 & 12,071 & 199 \\
+        ray.yorksj.ac.uk & 18,951 & 4,789 & 11 \\
+        repository.falmouth.ac.uk & 16,958 & 1,442 & 13 \\
+        researchonline.ljmu.ac.uk & 81,066 & 25,444 & 348 \\
+        researchspace.bathspa.ac.uk & 13,657 & 1,679 & 15 \\
+        shura.shu.ac.uk & 93,101 & 24,069 & 105 \\
+        
+        \hline
+        Total & 922,210 & 211,602 & 1,975\\
         \hline
     \end{tabular}
-    \caption{ePrints repositories.}
+    \caption{Number of analysed ePrints entries. Files associated with an ePrints entry for an application can take a number of formats, including PDF, DOCX or JPEG.}
     \label{table:eprints}
 \end{table}
 
