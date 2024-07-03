@@ -1,0 +1,106 @@
+,github_user_cleaned_url,archived,created_at,has_wiki,has_pages,license,readme_size,readme_path,readme_emojis,contributing_size,citation_added,contributing_added,repo_created_at,week_since_repo_creation_citation_added,week_since_repo_creation_contributing_added,license_type,readme_size_class,forks_count,stars_count,max_active_contributors
+0,JZhao12/CVML-Pose,False,2023-02-10 01:03:13+00:00,True,False,apache-2.0,8539.0,README.md,0.0,0.0,,,2023-02-10 01:03:13+00:00,,,permissive,informative,0,0,1.0
+1,CVML-UCLan/FCBFormer,False,2022-08-08 16:07:28+00:00,True,False,None,541.0,README.md,0.0,0.0,,,2022-08-08 16:07:28+00:00,,,None,short,0,3,1.0
+2,eprintsug/loginViaOrcid,False,2016-08-23 17:36:27+00:00,True,False,None,68.0,README.md,0.0,0.0,,,2016-08-23 17:36:27+00:00,,,None,ultra-short,0,0,1.0
+3,eprintsug/orcidt2,False,2014-12-16 11:13:16+00:00,True,False,None,1157.0,README.md,0.0,0.0,,,2014-12-16 11:13:16+00:00,,,None,short,1,2,1.0
+4,alphapsa/PIPE,False,2021-03-09 00:26:48+00:00,True,False,None,3182.0,README.rst,0.0,0.0,,,2021-03-09 00:26:48+00:00,,,None,informative,1,8,2.0
+5,SamirNepal/Li_CNN_2022,False,2022-12-26 12:57:36+00:00,True,False,mit,529.0,README.md,0.0,0.0,,,2022-12-26 12:57:36+00:00,,,permissive,short,0,1,1.0
+6,jlillo/tpfplotter,False,2020-02-02 21:31:02+00:00,True,False,mit,4423.0,README.md,0.0,0.0,,,2020-02-02 21:31:02+00:00,,,permissive,informative,10,22,2.0
+7,brunomozza/IoTSecurityOntology,False,2015-06-20 18:16:20+00:00,True,False,None,209.0,README.md,0.0,0.0,,,2015-06-20 18:16:20+00:00,,,None,ultra-short,3,1,1.0
+8,Katerina-Pap/MA-cont-shiny-app,False,2021-03-09 16:35:03+00:00,True,False,None,182.0,README.md,0.0,0.0,,,2021-03-09 16:35:03+00:00,,,None,ultra-short,0,1,1.0
+9,survival-lumc/ValidationCompRisks,False,2021-02-17 09:12:11+00:00,True,False,gpl-3.0,3667.0,README.md,0.0,0.0,,,2021-02-17 09:12:11+00:00,,,permissive,informative,11,17,2.0
+10,lucaborsato/trades,False,2014-07-10 12:23:27+00:00,True,False,None,2140.0,README.md,0.0,0.0,,,2014-07-10 12:23:27+00:00,,,None,informative,1,8,1.0
+11,lphowell/Geothermal-Modelling,False,2020-05-19 09:48:31+00:00,True,False,None,331.0,README.md,0.0,0.0,,,2020-05-19 09:48:31+00:00,,,None,short,4,1,1.0
+12,epsilonlabs/emf-cbp,False,2016-10-20 13:10:54+00:00,True,False,other,39.0,README.md,0.0,0.0,,,2016-10-20 13:10:54+00:00,,,unknown,ultra-short,0,4,2.0
+13,s-goldman/Dusty-Evolved-Star-Kit,False,2018-05-14 18:40:23+00:00,False,False,other,6066.0,README.md,0.0,0.0,,,2018-05-14 18:40:23+00:00,,,unknown,informative,2,13,2.0
+14,rOpenHealth/ClinicalCodes,False,2013-11-01 10:33:27+00:00,True,False,None,2182.0,README.md,0.0,0.0,,,2013-11-01 10:33:27+00:00,,,None,informative,4,17,1.0
+15,sanket0707/GNN-Mixer,False,2023-03-21 01:05:23+00:00,True,False,None,1653.0,README.md,0.0,0.0,,,2023-03-21 01:05:23+00:00,,,None,informative,0,0,1.0
+16,NabajeetBarman/GamingHDRVideoSET,False,2021-01-26 10:06:22+00:00,True,False,None,2446.0,README.md,0.0,0.0,,,2021-01-26 10:06:22+00:00,,,None,informative,0,1,1.0
+17,stootaghaj/DEMI,False,2020-08-10 11:25:49+00:00,True,False,None,4329.0,README.md,0.0,0.0,,,2020-08-10 11:25:49+00:00,,,None,informative,2,1,1.0
+18,ok1zjf/lbae,False,2020-06-05 22:03:28+00:00,True,False,mit,8745.0,README.md,0.0,0.0,,,2020-06-05 22:03:28+00:00,,,permissive,informative,2,18,1.0
+19,IraKorshunova/folk-rnn,False,2015-10-05 15:51:29+00:00,True,False,,,,,,,,,,,,,64,324,2.0
+20,cs-chan/Deep-Plant,False,2017-04-24 04:20:36+00:00,True,False,bsd-3-clause,1923.0,README.md,0.0,0.0,,,2017-04-24 04:20:36+00:00,,,permissive,informative,27,83,2.0
+21,rii-mango/Papaya,False,2012-06-17 22:20:58+00:00,True,True,other,3774.0,README.md,0.0,0.0,,,2012-06-17 22:20:58+00:00,,,unknown,informative,195,490,4.0
+22,tstafylakis/Lipreading-ResNet,False,2017-08-19 16:18:37+00:00,True,False,other,4978.0,README.md,0.0,0.0,,,2017-08-19 16:18:37+00:00,,,unknown,informative,15,94,1.0
+23,agentsoz/bdi-abm-integration,False,2016-01-25 01:23:50+00:00,True,False,lgpl-3.0,6373.0,README.md,0.0,0.0,,,2016-01-25 01:23:50+00:00,,,non-permissive,informative,8,10,4.0
+24,WavEC-Offshore-Renewables/tokyo-wavec-fowt,False,2020-08-10 09:28:41+00:00,True,False,mit,147.0,README.md,0.0,0.0,,,2020-08-10 09:28:41+00:00,,,permissive,ultra-short,1,5,1.0
+25,nilmtk/nilmtk,False,2013-12-03 11:39:12+00:00,True,False,apache-2.0,5444.0,README.md,1.0,0.0,,,2013-12-03 11:39:12+00:00,,,permissive,informative,433,736,6.0
+26,TGMclustering/TGMclustering,False,2021-11-05 15:15:52+00:00,True,False,other,6796.0,README.md,0.0,0.0,,,2021-11-05 15:15:52+00:00,,,unknown,informative,0,0,1.0
+27,PRiME-project/PRiME-Framework,False,2018-06-06 12:42:24+00:00,True,False,other,2099.0,README.md,0.0,0.0,,,2018-06-06 12:42:24+00:00,,,unknown,informative,2,2,1.0
+28,fchirono/amiet_tools,False,2020-03-05 01:16:03+00:00,True,False,bsd-3-clause,4039.0,README.md,0.0,0.0,,,2020-03-05 01:16:03+00:00,,,permissive,informative,8,12,1.0
+29,stain/profilechecker,False,2012-03-05 15:30:15+00:00,True,False,apache-2.0,4885.0,README.md,0.0,0.0,,,2012-03-05 15:30:15+00:00,,,permissive,informative,2,13,1.0
+30,JAEarly/MILLI,False,2022-01-27 15:39:49+00:00,True,False,None,2080.0,README.md,0.0,0.0,,,2022-01-27 15:39:49+00:00,,,None,informative,1,10,1.0
+31,esbmc/esbmc,False,2015-06-20 19:35:34+00:00,True,True,other,13239.0,README.md,0.0,0.0,2022-12-06 14:46:10+00:00,,2015-06-20 19:35:34+00:00,389.0,,unknown,detailed,75,182,11.0
+32,intelaligent/tctb,False,2017-03-06 18:19:55+00:00,True,True,gpl-3.0,3310.0,README.md,0.0,0.0,,,2017-03-06 18:19:55+00:00,,,permissive,informative,8,24,3.0
+33,ecs-vlc/opponency,False,2019-10-10 12:34:35+00:00,True,False,mit,15872.0,README.md,0.0,0.0,,,2019-10-10 12:34:35+00:00,,,permissive,detailed,1,11,2.0
+34,ethanwharris/foveated-convolutions,False,2019-11-01 09:19:06+00:00,True,False,mit,947.0,README.md,0.0,0.0,,,2019-11-01 09:19:06+00:00,,,permissive,short,1,7,1.0
+35,ilkaza/JPAL-HA,False,2022-01-21 20:02:52+00:00,True,False,mit,5821.0,README.md,0.0,0.0,,,2022-01-21 20:02:52+00:00,,,permissive,informative,0,1,1.0
+36,MAMEM/GazeTheWeb,False,2016-03-03 07:12:47+00:00,True,True,None,3069.0,README.md,0.0,0.0,,,2016-03-03 07:12:47+00:00,,,None,informative,9,31,4.0
+37,UoS-EEC/INET-opportunistic-routing,False,2021-08-25 14:22:49+00:00,True,False,other,2788.0,README.md,0.0,0.0,,,2021-08-25 14:22:49+00:00,,,unknown,informative,3,5,1.0
+38,stuartemiddleton/glosat_table_dataset,False,2021-03-09 09:16:44+00:00,True,False,other,32894.0,README.md,0.0,0.0,,,2021-03-09 09:16:44+00:00,,,unknown,detailed,0,6,1.0
+39,prov-suite/prov-sty,False,2015-05-01 11:08:21+00:00,True,False,mit,714.0,README.md,0.0,0.0,,,2015-05-01 11:08:21+00:00,,,permissive,short,4,5,2.0
+40,r-barnes/dggridR,False,2016-07-08 16:05:10+00:00,True,False,agpl-3.0,7128.0,README.md,0.0,1039.0,,2021-10-31 17:43:04+00:00,2016-07-08 16:05:10+00:00,,277.0,non-permissive,informative,19,141,2.0
+41,mhinsch/RRGraphs_mini,False,2019-04-10 10:59:20+00:00,True,False,None,452.0,README.md,0.0,0.0,,,2019-04-10 10:59:20+00:00,,,None,short,1,0,1.0
+42,oreindt/routes-rumours-ml3,False,2018-09-28 13:01:17+00:00,True,False,None,1222.0,README.md,0.0,0.0,,,2018-09-28 13:01:17+00:00,,,None,short,1,0,1.0
+43,facebookresearch/SentEval,False,2017-05-18 20:44:47+00:00,False,False,other,14474.0,README.md,0.0,0.0,,,2017-05-18 20:44:47+00:00,,,unknown,detailed,297,1945,3.0
+44,sebastianarnold/WikiSection,False,2019-01-14 10:50:09+00:00,False,False,other,8440.0,README.md,0.0,0.0,,,2019-01-14 10:50:09+00:00,,,unknown,informative,1,29,1.0
+45,eugenesiow/piotre,False,2016-07-05 12:31:27+00:00,True,False,None,2061.0,README.md,0.0,0.0,,,2016-07-05 12:31:27+00:00,,,None,informative,0,0,1.0
+46,abel-research/openlimb,False,2022-10-05 09:38:11+00:00,True,False,mit,5543.0,README.md,0.0,0.0,,,2022-10-05 09:38:11+00:00,,,permissive,informative,0,4,2.0
+47,AshwathyTR/IDN-Sum,False,2022-05-15 15:27:18+00:00,True,False,other,6398.0,README.md,0.0,0.0,,,2022-05-15 15:27:18+00:00,,,unknown,informative,1,1,1.0
+48,HHousen/TransformerSum,False,2020-04-07 04:41:40+00:00,False,False,gpl-3.0,9946.0,README.md,0.0,0.0,,,2020-04-07 04:41:40+00:00,,,permissive,informative,49,387,3.0
+49,xgfd/ASPG,False,2016-02-29 17:40:09+00:00,True,True,mit,0.0,,0.0,0.0,,,2016-02-29 17:40:09+00:00,,,permissive,none,0,1,1.0
+50,WalterZWang/AlphaBuilding-MedOffice,False,2021-04-19 17:15:55+00:00,True,False,bsd-3-clause,7248.0,README.md,0.0,0.0,,,2021-04-19 17:15:55+00:00,,,permissive,informative,3,4,2.0
+51,xiongbo010/QGCN,False,2022-09-23 21:07:33+00:00,True,False,mit,5189.0,README.md,1.0,0.0,,,2022-09-23 21:07:33+00:00,,,permissive,informative,0,4,1.0
+52,andrewtarzia/cage_datasets,False,2019-02-13 12:27:49+00:00,True,False,mit,46.0,README.md,0.0,0.0,,,2019-02-13 12:27:49+00:00,,,permissive,ultra-short,0,3,1.0
+53,yoqim/TBLD,False,2020-12-02 09:43:29+00:00,True,False,None,1191.0,README.md,0.0,0.0,,,2020-12-02 09:43:29+00:00,,,None,short,0,0,1.0
+54,uos/mesh_navigation,False,2019-03-02 09:46:08+00:00,True,False,bsd-3-clause,13654.0,README.md,0.0,0.0,,,2019-03-02 09:46:08+00:00,,,permissive,detailed,43,315,2.0
+55,OctoMap/octomap,False,2012-12-18 11:04:51+00:00,True,True,None,2634.0,README.md,0.0,0.0,,,2012-12-18 11:04:51+00:00,,,None,informative,596,1628,6.0
+56,introlab/rtabmap,False,2014-08-11 18:38:14+00:00,True,True,other,4349.0,README.md,0.0,0.0,,,2014-08-11 18:38:14+00:00,,,unknown,informative,716,2161,6.0
+57,pbw20/SULISO_manuals,False,2016-05-13 14:01:25+00:00,True,False,mit,1695.0,README.txt,0.0,0.0,,,2016-05-13 14:01:25+00:00,,,permissive,informative,0,0,1.0
+58,fcbr/mmt,False,2011-06-23 17:44:22+00:00,True,False,None,2086.0,README.textile,0.0,0.0,,,2011-06-23 17:44:22+00:00,,,None,informative,2,8,1.0
+59,ADAC-UoN/PIMMS,False,2014-12-03 13:33:24+00:00,True,False,gpl-2.0,91.0,README.md,0.0,0.0,,,2014-12-03 13:33:24+00:00,,,permissive,ultra-short,1,0,
+60,AlexTS1980/COVID-Single-Shot-Model,False,2020-11-30 20:42:01+00:00,True,False,None,4199.0,README.md,0.0,0.0,,,2020-11-30 20:42:01+00:00,,,None,informative,0,3,1.0
+61,asolimando/logmap-conservativity,False,2016-05-01 09:11:23+00:00,True,False,None,4577.0,README.md,0.0,0.0,,,2016-05-01 09:11:23+00:00,,,None,informative,0,2,1.0
+62,philgooch/BADREX-Biomedical-Abbreviation-Expander,False,2012-05-11 09:51:02+00:00,True,False,gpl-3.0,5036.0,README.md,0.0,0.0,,,2012-05-11 09:51:02+00:00,,,permissive,informative,3,10,1.0
+63,jordan-bird/synthetic-fruit-image-generator,False,2021-03-18 00:46:43+00:00,True,False,None,3672.0,README.md,0.0,0.0,,,2021-03-18 00:46:43+00:00,,,None,informative,3,13,1.0
+64,fcampelo/OrgSpec-paper,False,2021-02-13 12:44:31+00:00,True,False,None,1352.0,README.md,0.0,0.0,,,2021-02-13 12:44:31+00:00,,,None,short,1,1,1.0
+65,fcampelo/epitopes,False,2023-04-13 09:52:49+00:00,True,False,None,1550.0,README.md,0.0,0.0,,,2023-04-13 09:52:49+00:00,,,None,informative,1,0,1.0
+66,mozilla/TTS,False,2018-01-23 14:22:06+00:00,True,False,mpl-2.0,14293.0,README.md,15.0,1942.0,,2019-07-17 15:24:40+00:00,2018-01-23 14:22:06+00:00,,77.0,non-permissive,detailed,1067,7595,13.0
+67,vangiel/WheresTheFellow,False,2020-04-28 21:24:36+00:00,True,False,None,159.0,README.md,0.0,0.0,,,2020-04-28 21:24:36+00:00,,,None,ultra-short,1,1,2.0
+68,eghbal11/Eghbal,False,2020-06-10 12:37:34+00:00,True,False,None,0.0,,0.0,0.0,,,2020-06-10 12:37:34+00:00,,,None,none,0,0,1.0
+69,fcampelo/MOEADr,False,2016-06-23 18:50:55+00:00,True,True,None,4033.0,README.md,0.0,0.0,,,2016-06-23 18:50:55+00:00,,,None,informative,6,14,2.0
+70,DiUS/java-faker,False,2011-06-06 01:01:21+00:00,True,True,other,3407.0,README.md,0.0,902.0,,2019-07-20 02:35:12+00:00,2011-06-06 01:01:21+00:00,,423.0,unknown,informative,776,4184,9.0
+71,mondo-project/mondo-hawk,True,2015-02-11 16:29:06+00:00,True,True,epl-2.0,2205.0,README.md,0.0,0.0,,,2015-02-11 16:29:06+00:00,,,non-permissive,informative,5,17,4.0
+72,atlanmod/Mogwai,False,2015-02-03 15:07:23+00:00,True,True,None,3931.0,README.md,0.0,0.0,,,2015-02-03 15:07:23+00:00,,,None,informative,6,9,2.0
+73,atlanmod/NeoEMF,False,2014-11-19 13:07:45+00:00,True,True,other,5564.0,README.adoc,0.0,0.0,,,2014-11-19 13:07:45+00:00,,,unknown,informative,17,46,6.0
+74,quitadal/EPINETLAB,False,2017-10-03 14:38:17+00:00,True,False,gpl-3.0,2892.0,README.md,0.0,0.0,,,2017-10-03 14:38:17+00:00,,,permissive,informative,3,5,1.0
+75,NeuroanatomyAndConnectivity/broca,False,2015-03-30 16:47:33+00:00,True,False,mit,25.0,README.md,0.0,0.0,,,2015-03-30 16:47:33+00:00,,,permissive,ultra-short,6,3,2.0
+76,NeuroanatomyAndConnectivity/nki_nilearn,False,2016-05-26 17:09:58+00:00,True,False,None,256.0,README.md,0.0,0.0,,,2016-05-26 17:09:58+00:00,,,None,ultra-short,2,0,1.0
+77,bernuly/VCSimulinkTlbx,False,2016-05-14 01:09:11+00:00,True,False,None,1612.0,README.md,1.0,0.0,,,2016-05-14 01:09:11+00:00,,,None,informative,0,1,1.0
+78,BryanHunt/mongo-emf,False,2010-12-09 21:10:40+00:00,True,True,None,601.0,README.md,0.0,0.0,,,2010-12-09 21:10:40+00:00,,,None,short,7,38,1.0
+79,kennethreitz/grequests,False,2012-05-10 21:50:15+00:00,True,False,bsd-2-clause,4078.0,README.rst,3.0,0.0,,,2012-05-10 21:50:15+00:00,,,permissive,informative,299,4259,4.0
+80,lushv/geolabel-service,False,2013-08-11 23:27:25+00:00,True,False,None,946.0,README.md,0.0,0.0,,,2013-08-11 23:27:25+00:00,,,None,short,0,2,2.0
+81,52North/GEO-label-java,False,2013-09-09 14:36:52+00:00,False,False,apache-2.0,7630.0,README.md,0.0,0.0,,,2013-09-09 14:36:52+00:00,,,permissive,informative,4,4,2.0
+82,EPiCS/CamSim,False,2012-10-01 09:14:19+00:00,True,True,None,904.0,README.md,0.0,0.0,,,2012-10-01 09:14:19+00:00,,,None,short,5,5,2.0
+83,masakhane-io/masakhane-news,False,2022-12-23 13:28:57+00:00,True,False,None,5449.0,README.md,0.0,0.0,,,2022-12-23 13:28:57+00:00,,,None,informative,7,8,3.0
+84,zdai257/DeepAoANet,False,2021-05-06 14:28:45+00:00,True,False,None,2364.0,README.md,0.0,0.0,,,2021-05-06 14:28:45+00:00,,,None,informative,2,4,1.0
+85,FlorianSteinberg/incone,False,2018-09-30 11:47:42+00:00,True,False,None,825.0,README.md,0.0,0.0,,,2018-09-30 11:47:42+00:00,,,None,short,2,1,1.0
+86,google-research/bert,False,2018-10-25 22:57:34+00:00,True,False,apache-2.0,50519.0,README.md,0.0,1323.0,,2018-10-31 15:19:12+00:00,2018-10-25 22:57:34+00:00,,0.0,permissive,detailed,8912,34610,23.0
+87,thunlp/OpenCLaP,False,2019-07-01 02:23:06+00:00,True,False,mit,3293.0,README.md,0.0,0.0,,,2019-07-01 02:23:06+00:00,,,permissive,informative,144,917,2.0
+88,SigmaLabResearch/Gaze-Enabled-Histopathology,False,2022-02-01 12:29:12+00:00,True,False,gpl-3.0,161.0,README.md,0.0,0.0,,,2022-02-01 12:29:12+00:00,,,permissive,ultra-short,0,0,2.0
+89,SigmaLabResearch/Visnotate,False,2022-02-01 19:44:17+00:00,True,False,gpl-3.0,3960.0,README.md,0.0,0.0,,,2022-02-01 19:44:17+00:00,,,permissive,informative,0,1,1.0
+90,brunneis/ilab-erisk-2020,False,2020-06-22 11:58:14+00:00,True,False,gpl-3.0,154.0,README.md,0.0,0.0,,,2020-06-22 11:58:14+00:00,,,permissive,ultra-short,2,5,1.0
+91,tharindudr/transquest,False,2020-03-12 17:10:17+00:00,True,True,apache-2.0,5119.0,README.md,0.0,0.0,,,2020-03-12 17:10:17+00:00,,,permissive,informative,13,92,1.0
+92,ieee8023/covid-chestxray-dataset,False,2020-02-14 23:22:23+00:00,True,False,None,10616.0,README.md,2.0,0.0,,,2020-02-14 23:22:23+00:00,,,None,detailed,1263,2930,8.0
+93,muellmusik/Utopia,False,2013-03-23 18:41:46+00:00,True,False,None,524.0,README.md,0.0,0.0,,,2013-03-23 18:41:46+00:00,,,None,short,8,37,2.0
+94,supercollider/supercollider,False,2012-05-04 19:24:51+00:00,True,False,gpl-3.0,5619.0,README.md,0.0,117.0,,2017-06-27 18:42:42+00:00,2012-05-04 19:24:51+00:00,,268.0,permissive,informative,668,4807,24.0
+95,supercollider-quarks/Republic,False,2014-11-30 15:45:35+00:00,True,False,gpl-2.0,0.0,,0.0,0.0,,,2014-11-30 15:45:35+00:00,,,permissive,none,3,1,2.0
+96,gamesbyangelina/danesh,False,2015-12-11 11:43:35+00:00,True,False,None,188.0,README.md,0.0,0.0,,,2015-12-11 11:43:35+00:00,,,None,ultra-short,8,57,1.0
+97,cylammarco/ASPIRED-example,False,2020-09-12 22:09:21+00:00,True,False,,,,,,,,,,,,,2,1,1.0
+98,cylammarco/bhtomspec,False,2020-08-11 16:55:28+00:00,True,False,None,2027.0,README.md,0.0,0.0,,,2020-08-11 16:55:28+00:00,,,None,informative,0,0,1.0
+99,P-R-McWhirter/pyOsiris,False,2020-10-20 13:49:32+00:00,True,False,None,121.0,README.md,0.0,0.0,,,2020-10-20 13:49:32+00:00,,,None,ultra-short,0,0,1.0
+100,kecskemeti/dissect-cf,False,2014-01-09 11:58:10+00:00,True,True,lgpl-3.0,6458.0,README.md,0.0,0.0,,,2014-01-09 11:58:10+00:00,,,non-permissive,informative,40,5,2.0
+101,morriscb/The-wiZZ,False,2016-02-14 16:14:26+00:00,True,False,other,2660.0,README.md,0.0,0.0,,,2016-02-14 16:14:26+00:00,,,unknown,informative,5,7,2.0
+102,sjoudaki/cfhtlens_revisited,False,2016-01-21 22:52:51+00:00,True,False,None,964.0,README.md,0.0,0.0,,,2016-01-21 22:52:51+00:00,,,None,short,0,2,1.0
+103,vraj004/RyR-simulator,False,2013-04-24 15:26:01+00:00,True,False,None,3423.0,README.md,0.0,0.0,,,2013-04-24 15:26:01+00:00,,,None,informative,2,1,2.0
+104,ziqizhang/sti,False,2015-04-22 09:15:29+00:00,True,False,None,5295.0,README.md,0.0,0.0,,,2015-04-22 09:15:29+00:00,,,None,informative,8,19,1.0

@@ -139,17 +139,8 @@ dmypy.json
 
 *.png
 
-# data
-**/data/*
-data/analysis/eprints_pub
-!data/representative_set.csv
-!data/test_set.csv
-!data/eprints_repos.txt
-!data/analysis
-!analysis/*
-!data/analysis/overall/*.png
-#!data/analysis/repo_timelines/*/*.png
-!data/outputs
+data/debug/*
+!data/debug/representative_set.csv
 
 # tex
 *.aux
