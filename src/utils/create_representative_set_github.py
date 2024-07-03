@@ -1,10 +1,10 @@
 """
 Samples 100 repositories from Github based on different amounts of stars.
-Some metadata about these repositories is extracted and stored in a dataframe which is written to ../data/representative_set.csv.
+Some metadata about these repositories is extracted and stored in a dataframe.
 """
 
 from github import Github, GithubException
-import json
+import argparse
 import pandas as pd
 import configparser
 from tqdm import tqdm
@@ -16,7 +16,7 @@ def get_access_token():
         str: Access Token
     """
     config = configparser.ConfigParser()
-    config.read('../config.cfg')
+    config.read('../../config.cfg')
     return config['ACCESS']['token']
 
 def parse_samples(slice):
@@ -49,6 +49,15 @@ def compose_repo_link(row) -> str:
     return link
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        prog="create_representative_set_github",
+        description="Sample 100 repositories from Github based on different amounts of stars."
+    )
+    parser.add_argument("-o", "--output", type=str,
+                        help="output path for representative set",
+                        default="../../data/debug/representative_set.csv")
+    args = parser.parse_args()
+
     g = Github(get_access_token())
     samples = {}
     stars_intervals = ["<1", "1..100", "100..1000", "1000..10000", ">10000"]
@@ -57,4 +66,4 @@ if __name__ == "__main__":
         samples[interval] = parse_samples(result[:20])
     df = pd.concat(samples.values())
     df["github_id"] = df.apply(compose_repo_link, axis=1)
-    df.to_csv("../data/representative_set.csv", index=False)
+    df.to_csv(args.output, index=False)
