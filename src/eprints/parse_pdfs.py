@@ -1,5 +1,6 @@
 import requests
 import re
+import os
 import argparse
 import resource
 import pandas as pd
@@ -8,7 +9,7 @@ from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTTextContainer
 
 def get_domain_urls(row, domain, verbose):
-    """Yields matches of URLs of the domain in the PDF.
+    """Downloads file and yields matches of URLs of the domain found in it if it's a PDF.
 
     Args:
         row (pd.Series): contains columns for PDF url
@@ -41,18 +42,21 @@ def get_domain_urls(row, domain, verbose):
         row[k] = v
     return row
 
-def main(repo, date, domain, verbose):
-    path = f"../data/extracted_pdf_urls_{repo}_{date}.csv"
+def main(repo, date, domain, datadir, verbose):
+    path = os.path.join(datadir, f"publication_urls/extracted_pdf_urls_{repo}_{date}.csv")
     df = pd.read_csv(path)
+    # download file and search for URLs that contain the domain
     d = df.apply(get_domain_urls, axis=1, args=(domain, verbose))
     print(d.head())
     if verbose:
         print(f"Extracted URLs of domain {domain} from respository {repo}.")
+    # reformatting, store as CSV
     d = d.dropna().explode(['page_no', 'domain_url'])
     d.dropna(axis=0, how='all', subset=['domain_url'], inplace=True)
-    d.to_csv(f"../data/extracted_urls_{repo}_{date}_{domain}.csv", index=False)
+    links_path = os.path.join(datadir, f"repo_urls/extracted_urls_{repo}_{date}_{domain}.csv")
+    d.to_csv(links_path, index=False)
     if verbose:
-        print(f"Saved extracted URLs in ../data/extracted_urls_{repo}_{date}_{domain}.csv")
+        print(f"Saved extracted URLs in {links_path}.csv")
 
 if __name__ == "__main__":
     soft, hard = resource.getrlimit(resource.RLIMIT_AS)
@@ -64,6 +68,7 @@ if __name__ == "__main__":
     parser.add_argument("--repo", required=True, type=str, help="name of ePrints repository (i.e. domain)")
     parser.add_argument("--date", required=True, type=str, help="date range for filtering ePrints, e.g. 2021-2022")
     parser.add_argument("--domain", required=True, type=str, help="domain to match against (only one can be provided for now, e.g. github.com)")
+    parser.add_argument("--datadir", default="../../data/raw/eprints/", help="directory to write ePrints data to")
     parser.add_argument("-v", "--verbose", action="store_true", help="enable verbose output")
     args = parser.parse_args()
-    main(args.repo, args.date, args.domain, args.verbose)
+    main(args.repo, args.date, args.domain, args.datadir, args.verbose)

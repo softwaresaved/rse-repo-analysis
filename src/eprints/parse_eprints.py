@@ -1,4 +1,5 @@
 import requests
+import os
 from lxml import etree
 import argparse
 import pandas as pd
@@ -112,12 +113,13 @@ def parse_pdf_urls(path):
             n = len(urls)
             yield {"title": [title for _ in range(n)], "date": [date for _ in range(n)], "url": urls, "author_for_reference": [author_name_for_reference for _ in range(n)]}
 
-def main(repo, date, local, verbose):
-    path = f"../data/export_{repo}_{date}.xml"
-    if not local:
+def main(repo, date, local, datadir, verbose):
+    path = os.path.join(datadir, f"exports/export_{repo}_{date}.xml")
+    if not local:  # download XML data using ePrints search engine
         get_paper_list(repo, date, path)
         if verbose:
             print("Downloaded XML list of publications.")
+    # look for URLs to downloadable files for each publication
     pdf_dict = {'title': [], 'date': [], 'author_for_reference': [], 'pdf_url': []}
     for temp_dict in parse_pdf_urls(path):
         pdf_dict['title'] += temp_dict['title']
@@ -126,12 +128,14 @@ def main(repo, date, local, verbose):
         pdf_dict['pdf_url'] += temp_dict['url']
     if verbose:
         print(f"Extracted PDF download URLs from respository {repo}.")
+    # instantiate DataFrame, preliminary cleaning, store as CSV
     df = pd.DataFrame(pdf_dict)
     df.drop_duplicates(subset=['pdf_url'], inplace=True)
     df.dropna(inplace=True)
-    df.to_csv(f"../data/extracted_pdf_urls_{repo}_{date}.csv", index=False)
+    extracted_path = os.path.join(datadir, f"publication_urls/extracted_pdf_urls_{repo}_{date}.csv")
+    df.to_csv(extracted_path, index=False)
     if verbose:
-        print(f"Saved extracted URLs in ../data/extracted_pdf_urls_{repo}_{date}.csv")
+        print(f"Saved extracted URLs in {extracted_path}.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -141,6 +145,7 @@ if __name__ == "__main__":
     parser.add_argument("--repo", required=True, type=str, help="name of ePrints repository (i.e. domain)")
     parser.add_argument("--date", required=True, type=str, help="date range for filtering ePrints, e.g. 2021-2022")
     parser.add_argument("--local", action="store_true", help="use local ePrints XML output instead of downloading from web")
+    parser.add_argument("--datadir", default="../../data/raw/eprints/", help="directory to write ePrints data to")
     parser.add_argument("-v", "--verbose", action="store_true", help="enable verbose output")
     args = parser.parse_args()
-    main(args.repo, args.date, args.local, args.verbose)
+    main(args.repo, args.date, args.local, args.datadir, args.verbose)

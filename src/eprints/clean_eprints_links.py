@@ -1,6 +1,7 @@
 import pandas as pd
 import argparse
 import re
+import os
 import Levenshtein
 import configparser
 from github import Github, GithubException
@@ -68,17 +69,24 @@ def clean_by_user(row, column, verbose):
             repo_id = None
     return repo_id
 
-def main(repo, date, domain, verbose):
-    df = pd.read_csv(f"../data/extracted_urls_{repo}_{date}_{domain}.csv")
+def main(repo, date, domain, datadir, verbose):
+    repo_urls_path = os.path.join(datadir, f"repo_urls/extracted_urls_{repo}_{date}_{domain}.csv")
+    df = pd.read_csv(repo_urls_path)
+    # clean by advanced URL pattern
     df["pattern_cleaned_url"] = df.apply(clean_by_pattern, args=(domain,), axis=1)
     df = df.explode("pattern_cleaned_url", ignore_index=True)  # expand DataFrame for when multiple links are found
     df.drop_duplicates(subset=['title', 'author_for_reference', 'pattern_cleaned_url'], inplace=True)
     df.dropna(axis=0, subset=['pattern_cleaned_url'], inplace=True)
+    # check whether the repository exists using the GitHub API
     if domain == "github.com":
         df["github_user_cleaned_url"] = df.apply(clean_by_user, args=("pattern_cleaned_url", verbose), axis=1)
         #df.drop_duplicates(subset=['title', 'author_for_reference', 'github_user_cleaned_url'], inplace=True)
         df.dropna(axis=0, subset=['github_user_cleaned_url'], inplace=True)
-    df.to_csv(f"../data/cleaned_urls_{repo}_{date}_{domain}.csv", index=False)
+    cleaned_urls_path = os.path.join(datadir, f"cleaned_repo_urls/cleaned_urls_{repo}_{date}_{domain}.csv")
+    # store as CSV
+    df.to_csv(cleaned_urls_path, index=False)
+    if verbose:
+        print(f"Saved cleaned URLs in {cleaned_urls_path}.csv")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -88,6 +96,7 @@ if __name__ == "__main__":
     parser.add_argument("--repo", required=True, type=str, help="name of ePrints repository (i.e. domain)")
     parser.add_argument("--date", required=True, type=str, help="date range for filtering ePrints, e.g. 2021-2022")
     parser.add_argument("--domain", required=True, type=str, help="domain to match against (only one can be provided for now, e.g. github.com)")
+    parser.add_argument("--datadir", default="../../data/raw/eprints/", help="directory to write ePrints data to")
     parser.add_argument("-v", "--verbose", action="store_true", help="enable verbose output")
     args = parser.parse_args()
-    main(args.repo, args.date, args.domain, args.verbose)
+    main(args.repo, args.date, args.domain, args.datadir, args.verbose)
