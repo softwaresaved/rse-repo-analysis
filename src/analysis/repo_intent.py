@@ -1,9 +1,13 @@
+import os
 import pandas as pd
 import argparse
 
-def main(filepath, true_list_path, false_list_path):
+def main(filepath, true_list_path, false_list_path, outdir):
+    # read ePrints data
     df = pd.read_csv(filepath)
+    # filter to those we have manually collected intent labels for
     df = df[df.page_no < 2]
+    # for each GitHub repository cited in a pubcliation, find out whether it was mentioned as created software
     created_map = {"github_repo_id": [], "mention_created": []}
     for path, v in [(true_list_path, True), (false_list_path, False)]:
         with open(path, "r") as f:
@@ -11,6 +15,7 @@ def main(filepath, true_list_path, false_list_path):
                 created_map["github_repo_id"].append(line.rstrip("\n"))
                 created_map["mention_created"].append(v)
     created_df = pd.DataFrame(created_map)
+    # construct the final dataset
     merged_df = created_df.merge(df, how="left", left_on="github_repo_id", right_on="github_user_cleaned_url")
     print(f"[INFO] Candidates: {len(df)}\n       Mapped: {len(created_df)}\n       Result: {len(merged_df)}")
     merged_df["date"] = pd.to_datetime(merged_df["date"])
@@ -45,16 +50,17 @@ def main(filepath, true_list_path, false_list_path):
     merged_df.drop(columns=["github_user_cleaned_url"], inplace=True)
     print("Schema:")
     merged_df.info()
-    merged_df.to_csv("../data/outputs/eprints_w_intent.csv")
+    merged_df.to_csv(os.path.join(outdir, "eprints_w_intent.csv"))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog="repo_intent",
-        description="Load cleaned links from multiple ePrints repositories and merge them into one file."
+        description="Add repository intent to the ePrints publication data."
     )
-    parser.add_argument("-f", "--file", required=True, type=str, help="data file")
+    parser.add_argument("-f", "--file", required=True, type=str, help="data file containing info extracted from all ePrints repositories")
     parser.add_argument("--true", required=True, type=str, help="list of repo links cited as created")
     parser.add_argument("--false", required=True, type=str, help="list of repo links that are just mentioned")
+    parser.add_argument("--outdir", default="../../data/derived", type=str, help="path to derived data directory")
     parser.add_argument
     args = parser.parse_args()
-    main(args.file, args.true, args.false)
+    main(args.file, args.true, args.false, args.outdir)

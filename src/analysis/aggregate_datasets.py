@@ -376,7 +376,7 @@ def timelines_init(metadata, contents, contributions, forks, stars, issues, read
     timelines_df = timelines_df.set_index("github_user_cleaned_url")
     return timelines_df
 
-def main(dir, verbose):
+def main(dir, outdir, verbose):
     info(verbose, f"Loading data...")
     metadata = load_data(dir, "metadata.csv", "created_at")
     contents = load_data(dir, "contents.csv", ["citation_added", "contributing_added"])
@@ -418,7 +418,7 @@ def main(dir, verbose):
         left_on="github_user_cleaned_url",
         right_index=True
     )
-    overall_df.to_csv(os.path.join(dir, "aggregated_overall.csv"))
+    overall_df.to_csv(os.path.join(outdir, "aggregated_overall.csv"))
     info(verbose, "Overall aggregation complete.")
 
     info(verbose, "Aggregating timelines...")
@@ -426,8 +426,8 @@ def main(dir, verbose):
     timelines_df = timelines_init(metadata, contents, contributions, forks, stars, issues, readme_history)
     issue_users_timeline_df = user_type_wrt_issues(issues, timelines_df)
     commit_authors_timeline_df = user_type_wrt_commits(contributions)
-    issue_users_timeline_df.to_csv(os.path.join(dir, "aggregated_issue_user_timeline.csv"))
-    commit_authors_timeline_df.to_csv(os.path.join(dir, "aggregated_commit_author_timeline.csv"))
+    issue_users_timeline_df.to_csv(os.path.join(outdir, "aggregated_issue_user_timeline.csv"))
+    commit_authors_timeline_df.to_csv(os.path.join(outdir, "aggregated_commit_author_timeline.csv"))
     issue_counts_df = no_open_and_closed_issues(issues, timelines_df)
     engagement_df = engagement(forks, stars, timelines_df)
     highlights_df = date_highlights(readme_history, contents, paper_data, timelines_df)
@@ -449,7 +449,7 @@ def main(dir, verbose):
         right_index=True,
         how="left"
     )
-    overall_timeline_df.to_csv(os.path.join(dir, "aggregated_timeline.csv"))
+    overall_timeline_df.to_csv(os.path.join(outdir, "aggregated_timeline.csv"))
     info(verbose, "Timeline aggregation complete.")
 
 if __name__=="__main__":
@@ -457,7 +457,8 @@ if __name__=="__main__":
         prog="aggregate_datasets",
         description="Aggregate crawled data into output datasets."
     )
-    parser.add_argument("--dir", default="../data/analysis", type=str, help="path to data directory")
+    parser.add_argument("--datadir", default="../../data/raw/github", type=str, help="path to data directory")
+    parser.add_argument("--outdir", default="../../data/derived", type=str, help="path to use for output data")
     parser.add_argument("-v", "--verbose", action="store_true", help="enable verbose output")
     args = parser.parse_args()
-    main(args.dir, args.verbose)
+    main(args.datadir, args.outdir, args.verbose)
