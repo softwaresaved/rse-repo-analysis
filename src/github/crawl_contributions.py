@@ -50,7 +50,7 @@ def query_contributions(row: pd.Series, id_key: str, g: Github):
     return row
 
 def crawl_repos(df, name, target_folder, verbose):
-    """For each repository, retrieve contributions, contents, readme info, stars, forks and issues. All stored as CSV.
+    """For each repository, retrieve contributions and store as CSV.
 
     Args:
         df (pd.DataFrame): dataset containing GitHub repository identifiers
@@ -72,18 +72,19 @@ def crawl_repos(df, name, target_folder, verbose):
         end = time.time()
         print(f"Done - {end-start:.2f} seconds.")
 
-def main(path, name, verbose):
+def main(path, name, datadir, verbose):
     df = pd.read_csv(path)
-    target_folder = '../data'
+    target_folder = datadir
     crawl_repos(df, name, target_folder, verbose)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog="crawl",
-        description="Given a dataframe with columns user_name and repo_name, gather data from the corresponding GitHub repository."
+        description="Given a dataframe with a column indicating the GitHub repository ID, gather data from the corresponding GitHub repository."
     )
     parser.add_argument("-f", "--file", required=True, type=str, help="CSV file")
     parser.add_argument("-n", "--name", required=True, type=str, help="name of column containing github ID")
+    parser.add_argument("--datadir", default="../../data/raw/eprints/", help="directory to write ePrints data to")
     parser.add_argument("-v", "--verbose", action="store_true", help="enable verbose output")
     args = parser.parse_args()
-    main(args.file, args.name, args.verbose)
+    main(args.file, args.name, args.datadir, args.verbose)
