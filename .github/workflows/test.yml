@@ -8,9 +8,8 @@ jobs:
       run:
         shell: bash -el {0}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/checkout@v3
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: rse-repo-study
           environment-file: environment.yml
@@ -30,9 +29,8 @@ jobs:
       run:
         shell: bash -el {0}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/checkout@v3
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: rse-repo-study
           environment-file: environment.yml
@@ -52,9 +50,8 @@ jobs:
       run:
         shell: bash -el {0}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/checkout@v3
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: rse-repo-study
           environment-file: environment.yml
@@ -74,9 +71,8 @@ jobs:
       run:
         shell: bash -el {0}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/checkout@v3
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: rse-repo-study
           environment-file: environment.yml
@@ -96,9 +92,8 @@ jobs:
       run:
         shell: bash -el {0}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/checkout@v3
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: rse-repo-study
           environment-file: environment.yml
@@ -118,9 +113,8 @@ jobs:
       run:
         shell: bash -el {0}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/checkout@v3
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: rse-repo-study
           environment-file: environment.yml
@@ -140,3 +134,19 @@ jobs:
         working-directory: ./src/eprints
         run: python3 clean_eprints_links.py --repo eprints.soton.ac.uk --date 2022-2023 --domain github.com -v
       - run: ls -l data/raw/eprints
+  aggregate_data:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: rse-repo-study
+          environment-file: environment.yml
+          auto-activate-base: false
+      - name: Aggregate
+        working-directory: ./src/analysis
+        run: python3 aggregate_datasets.py -v
+      - run: ls -l data/derived
