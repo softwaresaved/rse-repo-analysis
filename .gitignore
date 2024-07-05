@@ -141,6 +141,7 @@ dmypy.json
 
 data/debug/*
 !data/debug/representative_set.csv
+!data/debug/test_set.csv
 
 # tex
 *.aux
