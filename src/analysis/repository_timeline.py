@@ -11,6 +11,17 @@ def info(verbose, msg):
         print(f"[INFO] {msg}")
 
 def load_data(data_dir, filename, repo, to_datetime=None):
+    """Filter data for the repository in question.
+
+    Args:
+        data_dir (str): directory with the data
+        filename (str): data file name
+        repo (str): repository ID
+        to_datetime (str | list, optional): name of column(s) to convert to pandas datetime type. Defaults to None.
+
+    Returns:
+        pd.DataFrame: data loaded from CSV
+    """
     df = pd.read_csv(os.path.join(data_dir, filename), index_col=0)
     df = df[df["github_user_cleaned_url"] == repo]
     if type(to_datetime) == list:
@@ -21,6 +32,14 @@ def load_data(data_dir, filename, repo, to_datetime=None):
     return df
 
 def analyse_headings(df):
+    """Filter README headings for words relating to ownership or usage (vocabulary manually defined).
+
+    Args:
+        df (pd.DataFrame): README history data mined from GitHub.
+
+    Returns:
+        pd.DataFrame: data with added columns "ownership_addition" and "usage_addition", both boolean.
+    """
     interesting_words = {
         "ownership": ["license", "example", "reference", "citation", "cited", "publication", "paper"],
         "usage": ["requirements", "using", "example", "usage", "run", "install", "installing", "installation", "tutorial", "tutorials", "build", "guide", "documentation"]
@@ -30,6 +49,16 @@ def analyse_headings(df):
     return df
 
 def engagement_user_highlights(users, metadata, forks, stars, ax):
+    """Plots when specific users forked or starred the repository.
+
+    Args:
+        users (list[str]): list of GitHub user names to consider
+        metadata (pd.DataFrame): metadata mined from GitHub
+        forks (pd.DataFrame): fork data mined from GitHub
+        stars (pd.DataFrame): star data mined from GitHub
+        ax (Axes): subplot to use
+    """
+    # convert dates to repository age in weeks
     user_forks = pd.merge(forks[forks.user.isin(users)], metadata, on="github_user_cleaned_url")
     user_forks["week_since_repo_creation"] = (user_forks.date - user_forks.created_at).dt.days // 7
     user_stars = pd.merge(stars[stars.user.isin(users)], metadata, on="github_user_cleaned_url")
@@ -38,6 +67,16 @@ def engagement_user_highlights(users, metadata, forks, stars, ax):
     ax.scatter(user_stars.week_since_repo_creation, user_stars.user, marker="v", s=100, label="starred")
 
 def user_type_wrt_issues(issues, metadata, forks, stars, analysis_end_date, ax):
+    """Plot every user's issue interaction type (opening issues, closing issues, both) with engagement highlight dates scattered on top.
+
+    Args:
+        issues (pd.DataFrame): issues data mined from GitHub
+        metadata (pd.DataFrame): metadata mined from GitHub
+        forks (pd.DataFrame): forks data mined from GitHub
+        stars (pd.DataFrame): stars data mined from GitHub
+        analysis_end_date (datetime.datetime): end date of the plot, usually the date the GitHub mining process was complete
+        ax (Axes): subplot to use
+    """
     # map dates to weeks
     merged_df = pd.merge(issues, metadata, on="github_user_cleaned_url", suffixes=(None,"_repo"))
     merged_df["created_at"] = (merged_df["created_at"] - merged_df["created_at_repo"]).dt.days // 7
@@ -76,6 +115,15 @@ def user_type_wrt_issues(issues, metadata, forks, stars, analysis_end_date, ax):
     engagement_user_highlights(users, metadata, forks, stars, ax)
 
 def contributor_team(contributions, metadata, forks, stars, axs):
+    """Plot every user's contributing type (active vs. inactive), with engagement highlight dates scattered on top.
+
+    Args:
+        contributions (pd.DataFrame): contribution (i.e. commits) data mined from GitHub
+        metadata (pd.DataFrame): metadata mined from GitHub
+        forks (pd.DataFrame): forks data mined from GitHub
+        stars (pd.DataFrame): stars data mined from GitHub
+        axs (list[Axes]): suplots to use (expecting two)
+    """
     # map dates to weeks
     contrib_df = pd.merge(metadata[["github_user_cleaned_url", "created_at"]], contributions)
     contrib_df["week_since_repo_creation"] = (contrib_df.week_co - contrib_df.created_at).dt.days // 7
@@ -118,6 +166,14 @@ def contributor_team(contributions, metadata, forks, stars, axs):
     )
 
 def no_open_and_closed_issues(issues, metadata, analysis_end_date, ax):
+    """Plot the number of closed and open issues over time.
+
+    Args:
+        issues (pd.DataFrame): issues data mined from GitHub
+        metadata (pd.DataFrame): metadata mined from GitHub
+        analysis_end_date (datetime.datetime): end date of the plot, usually the date the GitHub mining process was complete
+        ax (Axes): subplot to use
+    """
     # reframe timeline in terms of week since repo creation
     issues_timeline_df = pd.merge(metadata, issues, on="github_user_cleaned_url", suffixes=("_repo", None))
     issues_timeline_df["opened_in_week_since_repo_creation"] = (issues_timeline_df.created_at - issues_timeline_df.created_at_repo).dt.days // 7
@@ -146,12 +202,23 @@ def no_open_and_closed_issues(issues, metadata, analysis_end_date, ax):
         )
     
 def engagement(forks, stars, metadata, analysis_end_date, ax):
+    """Plot engagement indicators over time.
+
+    Args:
+        forks (pd.DataFrame): forks data mined from GitHub
+        stars (pd.DataFrame): stars data mined from GitHub
+        metadata (pd.DataFrame): metadata mined from GitHub
+        analysis_end_date (datetime.datetime): end date of the plot, usually the date the GitHub mining process was complete
+        ax (Axes): subplot to use
+    """
+    # reframe forks and star events into a weekly timeline
     forks_df = pd.merge(forks, metadata, on="github_user_cleaned_url")
     forks_df["week_since_repo_creation"] = (forks_df.date - forks_df.created_at).dt.days // 7
     forks_df = forks_df[["week_since_repo_creation", "user"]].groupby("week_since_repo_creation").count().rename(columns={"user": "no forks"}).sort_index()
     stars_df = pd.merge(stars, metadata, on="github_user_cleaned_url")
     stars_df["week_since_repo_creation"] = (stars_df.date - stars_df.created_at).dt.days // 7
     stars_df = stars_df[["week_since_repo_creation", "user"]].groupby("week_since_repo_creation").count().rename(columns={"user": "no stars"}).sort_index()
+    # line plot
     end = (analysis_end_date - metadata.created_at.iloc[0]).days // 7
     x_data = pd.Series(np.arange(end), name="week_since_repo_creation")
     engagement_df = pd.merge(x_data, forks_df, on="week_since_repo_creation", how="outer")
@@ -165,6 +232,14 @@ def engagement(forks, stars, metadata, analysis_end_date, ax):
     )
     
 def calc_y_timeline(data):
+    """Calculate the height of each highlight scatter plot such that they stack on top of each other.
+
+    Args:
+        data (list[pd.DataFrame]): all highlights data
+
+    Returns:
+        list[list]: list of Y-coordinates for the scatter plot
+    """
     ys = [[] for _ in range(len(data))]
     seen_x = []
     for i in range(len(data)):
@@ -174,6 +249,16 @@ def calc_y_timeline(data):
     return ys
 
 def date_highlights(readme_history, contents, metadata, paper_data, ax, overlay_ax):
+    """Plot highlight dates over time.
+
+    Args:
+        readme_history (pd.DataFrame): README commit history mined from GitHub
+        contents (pd.DataFrame): content data mined from GitHub
+        metadata (pd.DataFrame): metadata mined from GitHub
+        paper_data (pd.DataFrame): publication data mined from ePrints
+        ax (Axes): subplot to use
+        overlay_ax (Axes): main plot, used for top-bottom dotted lines
+    """
     df = pd.merge(metadata, readme_history, on="github_user_cleaned_url")
     df.dropna(subset=["author_date"], inplace=True)
     df["authored_in_week_since_creation"] = (df.author_date - df.created_at).dt.days // 7
@@ -212,16 +297,16 @@ def date_highlights(readme_history, contents, metadata, paper_data, ax, overlay_
         ax.scatter(data[i], ys[i], marker="^", s=100, label=labels[i], color=colors[i])
         overlay_ax.vlines(data[i], ys[i], ymax, linestyles='dashed', color=colors[i])
 
-def main(repo, dir, output_dir, verbose):
+def main(repo, githubdir, eprintsdir, output_dir, verbose):
     info(verbose, f"Loading data for repo {repo}...")
-    contents = load_data(dir, "contents.csv", repo, ["citation_added", "contributing_added"])
-    contributions = load_data(dir, "contributions.csv", repo, "week_co")
-    forks = load_data(dir, "forks.csv", repo, "date")
-    issues = load_data(dir, "issues.csv", repo, ["created_at", "closed_at"])
-    metadata = load_data(dir, "metadata.csv", repo, "created_at")
-    readme_history = load_data(dir, "readme_history.csv", repo, "author_date")
-    stars = load_data(dir, "stars.csv", repo, "date")
-    paper_data = load_data(os.path.join(dir, "cleaned_links"), "joined.csv", repo, "date")
+    contents = load_data(githubdir, "contents.csv", repo, ["citation_added", "contributing_added"])
+    contributions = load_data(githubdir, "contributions.csv", repo, "week_co")
+    forks = load_data(githubdir, "forks.csv", repo, "date")
+    issues = load_data(githubdir, "issues.csv", repo, ["created_at", "closed_at"])
+    metadata = load_data(githubdir, "metadata.csv", repo, "created_at")
+    readme_history = load_data(githubdir, "readme_history.csv", repo, "author_date")
+    stars = load_data(githubdir, "stars.csv", repo, "date")
+    paper_data = load_data(os.path.join(eprintsdir, "cleaned_repo_urls"), "joined.csv", repo, "date")
     info(verbose, "Data loading complete.")
 
     analysis_end_date = contributions.week_co.max() + timedelta(days=7)
@@ -272,8 +357,9 @@ if __name__ == "__main__":
         description="Plot repository events and development on timeline."
     )
     parser.add_argument("--repo", required=True, type=str, help="GitHub ID")
-    parser.add_argument("--dir", default="../data/analysis", type=str, help="path to data directory")
-    parser.add_argument("--outdir", default="repo_timelines/true_positives", type=str, help="name of output folder in data directory")
+    parser.add_argument("--githubdir", default="../../data/raw/github", type=str, help="path to GitHub data directory")
+    parser.add_argument("--eprintsdir", default="../../data/raw/eprints", type=str, help="path to ePrints data directory")
+    parser.add_argument("--outdir", default="../../data/derived/plots/repo_timelines/true_positives", type=str, help="path to the output directory")
     parser.add_argument("-v", "--verbose", action="store_true", help="enable verbose output")
     args = parser.parse_args()
-    main(args.repo, args.dir, args.outdir, args.verbose)
+    main(args.repo, args.githubdir, args.eprintsdir, args.outdir, args.verbose)

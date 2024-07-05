@@ -14,23 +14,42 @@ def info(verbose, msg):
         print(f"[INFO] {msg}")
 
 def clean_heading(h):
+    """Clean and normalise extracted headings.
+
+    Args:
+        h (str): heading text
+
+    Returns:
+        str: cleaned heading
+    """
+    # remove leading non-word characters
     to_remove = string.digits + string.whitespace + ".:"
     h = h.lstrip(to_remove)
+    # remove markdown-style links
     pattern = "\[(.+?)\]\(.+?\)"
     h = re.sub(pattern, r'\1', h, count=0)
+    # remove any punctuation and convert to lower-case
     h = h.replace(string.punctuation, "")
     h = h.strip(string.punctuation)
     h = h.lower()
     return h
 
 def plot_license_type(contents, ax):
+    """Plot a bar chart indicating the number of repositories with permissive, non-permissive, unknown type license or no license at all.
+
+    Args:
+        contents (pd.DataFrame): contents data mined from GitHub
+        ax (Axes): subplot to use
+    """
     contents = contents.copy()
     permissive_licenses = ["mit", "gpl-3.0", "apache-2.0", "bsd-3-clause", "gpl-2.0", "bsd-2-clause"] # https://en.wikipedia.org/wiki/Permissive_software_license
     contents.license = contents.license.fillna('None')
+    # If not permissive, check if it's non-existent or type other, otherwise class as non-permissive
     contents["license_type"] = np.where(
         contents.license.isin(permissive_licenses), "permissive", np.where(
         contents.license == "None", "None", np.where(
         contents.license == "other", "unknown", "non-permissive")))
+    # plot value counts
     contents.license_type.value_counts().sort_index().plot(
         kind='bar',
         ax=ax,
@@ -41,6 +60,12 @@ def plot_license_type(contents, ax):
     ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
 
 def plot_contributing_file_present(contents, ax):
+    """Plot a bar chart visualising the number of repositories with contribution guidelines.
+
+    Args:
+        contents (pd.DataFrame): contents data mined from GitHub
+        ax (Axes): subplot to use
+    """
     pd.notna(contents.contributing_added).value_counts().plot(
         kind='bar',
         ax=ax,
@@ -51,6 +76,12 @@ def plot_contributing_file_present(contents, ax):
     ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
 
 def plot_emojis(contents, ax):
+    """Plot a histogram visualising the number of emojis found in repository READMEs.
+
+    Args:
+        contents (pd.DataFrame): contents data mined from GitHub
+        ax (Axes): subplot to use
+    """
     bins = [0, 1, 2, 5, 10]
     if contents.readme_emojis.max() > bins[-1]:
         bins.append(contents.readme_emojis.max())
@@ -62,15 +93,24 @@ def plot_emojis(contents, ax):
     ax.set(xlabel="number of emojis in README", ylabel="repository count")
 
 def plot_team_size(metadata, contributions, ax):
+    """Plot a histogram visualising the maximum team size for a repository.
+
+    Args:
+        metadata (pd.DataFrame): metadata mined from GitHub
+        contributions (pd.DataFrame): contributions (i.e. commit) data mined from GitHub
+        ax (Axes): subplot to use
+    """
     contrib_df = pd.merge(metadata[["github_user_cleaned_url", "created_at"]], contributions)
+    # add week timeline info
     contrib_df["week_since_repo_creation"] = (contrib_df.week_co - contrib_df.created_at).dt.days // 7
     team_df = contrib_df[["github_user_cleaned_url", "author", "week_since_repo_creation", "commits"]].set_index(["github_user_cleaned_url", "author", "week_since_repo_creation"]).sort_index()
-    # user is active contributor if made at least one commit in last 12 weeks
+    # user is considered an active contributor if they made at least one commit in the last 12 weeks
     windowed_team_df = team_df.groupby(level="author").rolling(window=12, min_periods=0).sum().droplevel(0)
     windowed_team_df["active contributors"] = windowed_team_df.commits > 0
-    # team size
+    # team size: number of active contributors within one week
     team_size = windowed_team_df.groupby(level=["github_user_cleaned_url", "week_since_repo_creation"])["active contributors"].value_counts()[:,:,True]
     max_team_size = team_size.groupby(level="github_user_cleaned_url").max()
+    # plot histogram
     bins = [1, 2, 5, 10]
     if max_team_size.max() > bins[-1]:
         bins.append(max_team_size.max())
@@ -82,6 +122,13 @@ def plot_team_size(metadata, contributions, ax):
     ax.set(xlabel="maximum team size", ylabel="repository count")
 
 def plot_readme_size(contents, ax, type="bar"):
+    """Plot a histogram of the size of the README file found in repositories. The bin limits were chosen empirically.
+
+    Args:
+        contents (pd.DataFrame): contents data mined from GitHub
+        ax (Axes): subplot to use
+        type (str, optional): plot type, can be "bar" or "pie". Defaults to "bar".
+    """
     bins = [0, 1, 300, 1500, 10000]
     binmeanings = ["none", "ultra-short", "short", "informative", "detailed"]
     if contents.readme_size.max() > bins[-1]:
@@ -99,14 +146,23 @@ def plot_readme_size(contents, ax, type="bar"):
         ax.set(xlabel="size of README in Bytes")
 
 def plot_headings(readme_df, ax):
+    """Plot a wordcloud from the headings used in README files. Excludes some manually defined words that skew the results too much to be meaningful.
+
+    Args:
+        readme_df (pd.DataFrame): readme history data mined from GitHub, including all headings ever added to the README
+        ax (Axes): subplot to use
+    """
+    # clean any existing headings
     headings = []
     for l in readme_df.added_headings.dropna():
         headings += ast.literal_eval(l)
     headings = [clean_heading(h) for h in headings]
 
+    # manually exclude words that were found to skew the distribution
     stopwords = STOPWORDS
     custom = set(["trades", "glosat", "glosat_table_dataset", "nilmtk", "bert", "lemon", "cascadetabnet"])
     stopwords = stopwords.union(custom)
+    # plot wordcloud
     wordcloud = WordCloud(
         collocation_threshold=15,
         stopwords=stopwords,
@@ -119,6 +175,14 @@ def plot_headings(readme_df, ax):
     ax.set(title="README headings")
 
 def plot_table(metadata, stars, forks, ax):
+    """Add a table with basic stats (repository age, fork counts, star counts).
+
+    Args:
+        metadata (pd.DataFrame): metadata mined from GitHub.
+        stars (pd.DataFrame): stars data mined from GitHub.
+        forks (pd.DataFrame): forks data mined from GitHub.
+        ax (Axes): subplot to use
+    """
     age = (datetime.today() - metadata["created_at"]).dt.days // 7
     fork_counts = forks.groupby("github_user_cleaned_url")["user"].count()
     fork_counts.rename("forks_no", inplace=True)
@@ -138,7 +202,7 @@ def plot_table(metadata, stars, forks, ax):
     ax.set_axis_off()
     ax.set(title="stats")
 
-def main(data_dir, verbose, filter_path, tag):
+def main(data_dir, outdir, verbose, filter_path, tag):
     info(verbose, "Loading data...")
     contents = pd.read_csv(os.path.join(data_dir, "contents.csv"), index_col=0)
     metadata = pd.read_csv(os.path.join(data_dir, "metadata.csv"), index_col=0)
@@ -149,7 +213,7 @@ def main(data_dir, verbose, filter_path, tag):
     stars = pd.read_csv(os.path.join(data_dir, "stars.csv"), index_col=0)
     forks = pd.read_csv(os.path.join(data_dir, "forks.csv"), index_col=0)
 
-    if filter_path is not None:
+    if filter_path is not None:  # e.g. filter for high-interest repositories based on a txt file containing a list of those
         info(verbose, "Filtering data...")
         with open(filter_path, "r") as f:
             filtered = [line.rstrip() for line in f]
@@ -179,19 +243,20 @@ def main(data_dir, verbose, filter_path, tag):
     plot_table(metadata, stars, forks, ax7)
     if tag:
         plt.suptitle(f"Overall statistics for ePrints repositories ({tag})")
-        plt.savefig(os.path.join(data_dir, "overall", f"overall_{tag}.png"), bbox_inches="tight")
+        plt.savefig(os.path.join(outdir, "overall", f"overall_{tag}.png"), bbox_inches="tight")
     else:
         plt.suptitle("Overall statistics for ePrints repositories")
-        plt.savefig(os.path.join(data_dir, "overall", "overall.png"), bbox_inches="tight")
+        plt.savefig(os.path.join(outdir, "overall", "overall.png"), bbox_inches="tight")
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(
         prog="overall",
         description="Plot overall repo analysis."
     )
-    parser.add_argument("--dir", default="../data/analysis", type=str, help="path to data directory")
+    parser.add_argument("--datadir", default="../../data/raw/github", type=str, help="path to GitHub data directory")
+    parser.add_argument("--outdir", default="../../data/derived", type=str, help="path to output data directory")
     parser.add_argument("-v", "--verbose", action="store_true", help="enable verbose output")
-    parser.add_argument("--filter", type=str, help="path to file with repos to consider")
-    parser.add_argument("--tag", type=str, help="tag name to use")
+    parser.add_argument("--filter", type=str, help="path to file listing the repos that should be considered")
+    parser.add_argument("--tag", type=str, help="tag to add to the filename, e.g. to indicate that the repositories were filtered")
     args = parser.parse_args()
-    main(args.dir, args.verbose, args.filter, args.tag)
+    main(args.datadir, args.outdir, args.verbose, args.filter, args.tag)
