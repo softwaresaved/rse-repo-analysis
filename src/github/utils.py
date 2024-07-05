@@ -64,7 +64,7 @@ def get_access_token():
         str: access token
     """
     config = configparser.ConfigParser()
-    config.read('../config.cfg')
+    config.read('../../config.cfg')
     return config['ACCESS']['token']
 
 def collect(g, df, name, func, drop_names, path):
