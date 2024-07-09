@@ -376,16 +376,16 @@ def timelines_init(metadata, contents, contributions, forks, stars, issues, read
     timelines_df = timelines_df.set_index("github_user_cleaned_url")
     return timelines_df
 
-def main(dir, outdir, verbose):
+def main(githubdir, eprintsdir, outdir, verbose):
     info(verbose, f"Loading data...")
-    metadata = load_data(dir, "metadata.csv", "created_at")
-    contents = load_data(dir, "contents.csv", ["citation_added", "contributing_added"])
-    contributions = load_data(dir, "contributions.csv", "week_co")
-    forks = load_data(dir, "forks.csv", "date")
-    stars = load_data(dir, "stars.csv", "date")
-    issues = load_data(dir, "issues.csv", ["created_at", "closed_at"])
-    readme_history = load_data(dir, "readme_history.csv", "author_date")
-    paper_data = load_data(os.path.join(dir, "cleaned_links"), "joined.csv", "date")
+    metadata = load_data(githubdir, "metadata.csv", "created_at")
+    contents = load_data(githubdir, "contents.csv", ["citation_added", "contributing_added"])
+    contributions = load_data(githubdir, "contributions.csv", "week_co")
+    forks = load_data(githubdir, "forks.csv", "date")
+    stars = load_data(githubdir, "stars.csv", "date")
+    issues = load_data(githubdir, "issues.csv", ["created_at", "closed_at"])
+    readme_history = load_data(githubdir, "readme_history.csv", "author_date")
+    paper_data = load_data(os.path.join(eprintsdir, "cleaned_repo_urls"), "joined.csv", "date")
     info(verbose, "Data loading complete.")
 
     info(verbose, "Preprocessing...")
@@ -457,8 +457,9 @@ if __name__=="__main__":
         prog="aggregate_datasets",
         description="Aggregate crawled data into output datasets."
     )
-    parser.add_argument("--datadir", default="../../data/raw/github", type=str, help="path to data directory")
+    parser.add_argument("--githubdir", default="../../data/raw/github", type=str, help="path to GitHub data directory")
+    parser.add_argument("--eprintsdir", default="../../data/raw/eprints", type=str, help="path to ePrints data directory")
     parser.add_argument("--outdir", default="../../data/derived", type=str, help="path to use for output data")
     parser.add_argument("-v", "--verbose", action="store_true", help="enable verbose output")
     args = parser.parse_args()
-    main(args.datadir, args.outdir, args.verbose)
+    main(args.githubdir, args.eprintsdir, args.outdir, args.verbose)

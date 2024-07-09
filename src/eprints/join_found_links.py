@@ -34,18 +34,17 @@ def main(date, domain, datadir):
         repo_df = load_cleaned_links(repo, date, domain, datadir)
         if repo_df is not None:
             repo_df["repo"] = repo
+            repo_df = repo_df[repo_df.github_user_cleaned_url.notna()]
             if df is None:
                 df = repo_df
             else:
                 df = pd.concat([df, repo_df])
-    # select only URLs found on the first two pages of a repository
-    filtered = df.loc[df.page_no <= 1]
-    filtered.to_csv(os.path.join(datadir, f"cleaned_repo_urls/filtered_urls_{date}_{domain}.csv"))
+    df.to_csv(os.path.join(datadir, f"cleaned_repo_urls/joined.csv"), index=None)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog="merge_and_filter",
-        description="Load cleaned links from multiple ePrints repositories, merge them into one file and filter for the links found on the first two pages."
+        description="Load any found links from multiple ePrints repositories and merge them into one file."
     )
     parser.add_argument("--date", required=True, type=str, help="date range for filtering ePrints, e.g. 2021-2022")
     parser.add_argument("--domain", required=True, type=str, help="domain to match against (only one can be provided for now, e.g. github.com)")
