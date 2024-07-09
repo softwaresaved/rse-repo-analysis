@@ -136,6 +136,9 @@ dmypy.json
 
 # notebooks for testing
 *.ipynb
+# analysis notebooks
+!src/analysis/github.ipynb
+!src/analysis/eprints.ipynb
 
 *.png
 
