@@ -19,6 +19,6 @@ if __name__ == "__main__":
     )
     parser.add_argument("-f", "--file", type=str,
                         help="CSV file containing data from all ePrints repositories",
-                        default="../../data/raw/eprints/cleaned_links/joined.csv")
+                        default="../../data/raw/eprints/cleaned_repo_urls/joined.csv")
     args = parser.parse_args()
     main(args.file)

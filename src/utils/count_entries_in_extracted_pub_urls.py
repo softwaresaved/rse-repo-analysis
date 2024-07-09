@@ -18,6 +18,6 @@ if __name__ == "__main__":
     )
     parser.add_argument("-d", "--directory", type=str,
                         help="Directory containing CSV files with publication URLs, one for each ePrints repository",
-                        default="../../data/raw/eprints/eprints_pub/")
+                        default="../../data/raw/eprints/publication_urls/")
     args = parser.parse_args()
     main(args.directory)
