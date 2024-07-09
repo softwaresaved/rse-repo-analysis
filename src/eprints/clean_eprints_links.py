@@ -14,7 +14,7 @@ def get_access_token():
         str: Access Token
     """
     config = configparser.ConfigParser()
-    config.read('../config.cfg')
+    config.read('../../config.cfg')
     return config['ACCESS']['token']
 
 def clean_by_pattern(row, domain):
