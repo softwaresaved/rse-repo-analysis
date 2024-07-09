@@ -24,7 +24,7 @@ We hypothesise that
    4. community engagement: external users create and resolve issues, merge requests
 2. research software repositories that employ good practices reach higher stages (earlier)
 
-### Indicators
+### Potential indicators
 
 This list of indicators is meant for brainstorming. Not all data listed here will be collected in the end.
 
@@ -35,7 +35,8 @@ This list of indicators is meant for brainstorming. Not all data listed here wil
 
 ### Contextual Metadata
 
-To contextualise the result, we should try and record information about the initial publication. This can then be used to find the publication on CrossRef etc. and collect further information such as:
+To contextualise the result, we record information about the initial publication (title, author, ...). 
+This could later be used to find the publication on CrossRef etc. and collect further information such as:
 
 - affiliation
 - mention of developers to the software as authors of the publication
@@ -51,17 +52,27 @@ git submodule init
 git submodule update
 ```
 
-### Layout
+### Usage
 
-This project is in active development, so expect the file structure to change from time to time. 
+Most folders contain their own README file summarising their contents and how the scripts should be used.
+More details can be found in the wiki.
+- [`src`](./src/): any source code for the main bulk of this work (collecting and analysing RSE GitHub repositories)
+  - [`eprints`](./src/eprints/): source files for extracting URLs from papers publicly available in ePrints repositories
+  - [`github`](./src/github/): source files for mining data about GitHub repositories using the GitHub API
+  - [`analysis`](./src/analysis/): analysis scripts
+  - [`utils`](./src/utils): utility scripts
+- [`data`](./data): data used for the main bulk of this work
+  - [`debug`](./data/debug/): test data used for automated testing and debugging
+  - [`raw`](./data/raw): raw data mined from ePrints and GitHub
+  - [`derived`](./data/derived/): data produced as part of the exploratory analysis
+- [`tex`](./tex/): preliminary report on the main bulk of this work
 - [`software-mentions`](software-mentions/): submodule containing a [fork](https://github.com/karacolada/software-mentions) of the Chan Zuckerberg Initiative's [Software Mentions Repository](https://github.com/chanzuckerberg/software-mentions)
   - [`SSI-notebooks`](software-mentions/SSI-notebooks/): our own scripts handling the CZI Software Mentions dataset
-- [`eprints`](eprints/): source files for extracting URLs from papers publicly available in ePrints repositories
 
 ### Requirements
 
 As this project is developed using Python, it is recommended to set up a new virtual environment, e.g. using [Conda](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html).
-Inside the environment, install the following packages:
+Inside the environment, install the following packages or use [`environment.yml`](./environment.yml):
 - `pandas`
 - `Jupyter`
 - `matplotlib`
@@ -99,23 +110,6 @@ This might be changed to configurable paths in the future, but for now, that is 
 
 The code in [`software-mentions`](software-mentions/) expects the CZI dataset in its root directory, i.e. `software-mentions/data`.
 You can download the dataset [here](https://datadryad.org/stash/dataset/doi:10.5061/dryad.6wwpzgn2c) and extract it into the correct location.
-
-## Usage
-
-ePrints:
-- [`eprints/parse_eprints.py`](eprints/parse_eprints.py): Download XML data from an ePrints repository, perform a free-text search for any text containing the specified domain. Pass flag `--local` if you have already downloaded the XML data and want to process it locally.
-- [`eprints/clean_eprints_links.py`](eprints/clean_eprints_links.py): Process extracted links using pattern matching and, optionally, user matching to ensure the extracted links are correct and reachable.
-- [`extract_links_from_eprints.sh`](eprints/extract_links_from_eprints.sh): Executes both scripts.
-
-GitHub (see also [GitHub API](#github-api)):
-- [`github/crawl.py`](github/crawl.py): Takes CSV file and column name as argument. Crawls GitHub for info on the repositories named in the CSV file (issues, commits, contents) and stores them in a CSV file.
-
-Utilities:
-- [`utilities/create_representative_set_github.py`](utilities/create_representative_set_github.py): As the name suggests, samples a set of 100 GitHub repositories (not specifically research software) based on the number of stars a repository has. Produces a distribution of different repository sizes and forks. Useful for testing GitHub crawling code and estimating resulting dataset sizes.
-
-### Data
-
-Data is collected into [`data`](data/). Scripts will assume that all data collected in previous stages of the analysis are located here.
 
 ## References
 
