@@ -8,9 +8,8 @@ jobs:
       run:
         shell: bash -el {0}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/checkout@v3
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: rse-repo-study
           environment-file: environment.yml
@@ -21,8 +20,8 @@ jobs:
           cp config_example.cfg config.cfg
           sed -i "s/<your-access-token>/${{ secrets.TOKEN_TEST }}/" config.cfg
       - name: Test crawling contents script
-        working-directory: ./github
-        run: python3 crawl_contents.py -f ../data/test_set.csv -n github_id -v
+        working-directory: ./src/github
+        run: python3 crawl_contents.py -f ../../data/debug/test_set.csv -n github_id -v
       - run: ls -l data/
   github-crawl-contributions:
     runs-on: ubuntu-latest
@@ -30,9 +29,8 @@ jobs:
       run:
         shell: bash -el {0}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/checkout@v3
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: rse-repo-study
           environment-file: environment.yml
@@ -43,18 +41,17 @@ jobs:
           cp config_example.cfg config.cfg
           sed -i "s/<your-access-token>/${{ secrets.TOKEN_TEST }}/" config.cfg
       - name: Test crawling contributions script
-        working-directory: ./github
-        run: python3 crawl_contributions.py -f ../data/test_set.csv -n github_id -v
-      - run: ls -l data/
+        working-directory: ./src/github
+        run: python3 crawl_contributions.py -f ../../data/debug/test_set.csv -n github_id -v
+      - run: ls -l data/raw/github
   github-crawl-engagement:
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash -el {0}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/checkout@v3
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: rse-repo-study
           environment-file: environment.yml
@@ -65,18 +62,17 @@ jobs:
           cp config_example.cfg config.cfg
           sed -i "s/<your-access-token>/${{ secrets.TOKEN_TEST }}/" config.cfg
       - name: Test crawling engagement script
-        working-directory: ./github
-        run: python3 crawl_engagement.py -f ../data/test_set.csv -n github_id -v
-      - run: ls -l data/        
+        working-directory: ./src/github
+        run: python3 crawl_engagement.py -f ../../data/debug/test_set.csv -n github_id -v
+      - run: ls -l data/raw/github       
   github-crawl-issues:
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash -el {0}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/checkout@v3
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: rse-repo-study
           environment-file: environment.yml
@@ -87,18 +83,17 @@ jobs:
           cp config_example.cfg config.cfg
           sed -i "s/<your-access-token>/${{ secrets.TOKEN_TEST }}/" config.cfg
       - name: Test crawling issues script
-        working-directory: ./github
-        run: python3 crawl_issues.py -f ../data/test_set.csv -n github_id -v
-      - run: ls -l data/        
+        working-directory: ./src/github
+        run: python3 crawl_issues.py -f ../../data/debug/test_set.csv -n github_id -v
+      - run: ls -l data/raw/github    
   github-crawl-metadata:
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash -el {0}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/checkout@v3
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: rse-repo-study
           environment-file: environment.yml
@@ -109,18 +104,17 @@ jobs:
           cp config_example.cfg config.cfg
           sed -i "s/<your-access-token>/${{ secrets.TOKEN_TEST }}/" config.cfg
       - name: Test crawling issues script
-        working-directory: ./github
-        run: python3 crawl_metadata.py -f ../data/test_set.csv -n github_id -v
-      - run: ls -l data/             
+        working-directory: ./src/github
+        run: python3 crawl_metadata.py -f ../../data/debug/test_set.csv -n github_id -v
+      - run: ls -l data/raw/github         
   eprints-parse:
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash -el {0}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/checkout@v3
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: rse-repo-study
           environment-file: environment.yml
@@ -131,12 +125,28 @@ jobs:
           cp config_example.cfg config.cfg
           sed -i "s/<your-access-token>/${{ secrets.TOKEN_TEST }}/" config.cfg
       - name: Test parsing remote eprints
-        working-directory: ./eprints
+        working-directory: ./src/eprints
         run: python3 parse_eprints.py --repo eprints.soton.ac.uk --date 2022-2023 -v
       - name: Test parsing PDFs
-        working-directory: ./eprints
+        working-directory: ./src/eprints
         run: python3 parse_pdfs.py --repo eprints.soton.ac.uk --date 2022-2023 --domain github.com -v
       - name: Test cleaning links
-        working-directory: ./eprints
+        working-directory: ./src/eprints
         run: python3 clean_eprints_links.py --repo eprints.soton.ac.uk --date 2022-2023 --domain github.com -v
-      - run: ls -l data/
+      - run: ls -l data/raw/eprints
+  aggregate_data:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: rse-repo-study
+          environment-file: environment.yml
+          auto-activate-base: false
+      - name: Aggregate
+        working-directory: ./src/analysis
+        run: python3 aggregate_datasets.py -v
+      - run: ls -l data/derived

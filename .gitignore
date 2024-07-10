@@ -136,20 +136,15 @@ dmypy.json
 
 # notebooks for testing
 *.ipynb
+# analysis notebooks
+!src/analysis/github.ipynb
+!src/analysis/eprints.ipynb
 
 *.png
 
-# data
-**/data/*
-data/analysis/eprints_pub
-!data/representative_set.csv
-!data/test_set.csv
-!data/eprints_repos.txt
-!data/analysis
-!analysis/*
-!data/analysis/overall/*.png
-#!data/analysis/repo_timelines/*/*.png
-!data/outputs
+data/debug/*
+!data/debug/representative_set.csv
+!data/debug/test_set.csv
 
 # tex
 *.aux
