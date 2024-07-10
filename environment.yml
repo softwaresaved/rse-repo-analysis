@@ -10,12 +10,12 @@ dependencies:
   - jupyter=1.0.0
   - lxml=4.9.1
   - pip:
-      - beautifulsoup4=4.11.2
-      - emoji=2.2.0
-      - levenshtein=0.20.9
-      - pdfminer-six=20221105
-      - pydriller=2.4.1
-      - pygithub=1.58.1
-      - pyyaml=6.0
-      - tqdm=4.65.0
-      - unidecode=1.3.6
+      - beautifulsoup4==4.11.2
+      - emoji==2.2.0
+      - levenshtein==0.20.9
+      - pdfminer-six==20221105
+      - pydriller==2.4.1
+      - pygithub==1.58.1
+      - pyyaml==6.0
+      - tqdm==4.65.0
+      - unidecode==1.3.6
