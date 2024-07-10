@@ -26,7 +26,7 @@ def clean_heading(h):
     to_remove = string.digits + string.whitespace + ".:"
     h = h.lstrip(to_remove)
     # remove markdown-style links
-    pattern = "\[(.+?)\]\(.+?\)"
+    pattern = r"\[(.+?)\]\(.+?\)"
     h = re.sub(pattern, r'\1', h, count=0)
     # remove any punctuation and convert to lower-case
     h = h.replace(string.punctuation, "")
@@ -243,10 +243,10 @@ def main(data_dir, outdir, verbose, filter_path, tag):
     plot_table(metadata, stars, forks, ax7)
     if tag:
         plt.suptitle(f"Overall statistics for ePrints repositories ({tag})")
-        plt.savefig(os.path.join(outdir, "overall", f"overall_{tag}.png"), bbox_inches="tight")
+        plt.savefig(os.path.join(outdir, "plots", "overall", f"overall_{tag}.png"), bbox_inches="tight")
     else:
         plt.suptitle("Overall statistics for ePrints repositories")
-        plt.savefig(os.path.join(outdir, "overall", "overall.png"), bbox_inches="tight")
+        plt.savefig(os.path.join(outdir, "plots", "overall", "overall.png"), bbox_inches="tight")
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(

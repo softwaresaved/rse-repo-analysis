@@ -151,7 +151,8 @@ def clean_headings(readme_df):
         cleaned_headings_list = []
         for h in l:
             h = h.lstrip(to_remove)
-            pattern = "\[(.+?)\]\(.+?\)"
+            # remove markdown-style links
+            pattern = r"\[(.+?)\]\(.+?\)"
             h = re.sub(pattern, r'\1', h, count=0)
             h = h.replace(string.punctuation, "")
             h = h.strip(string.punctuation)
