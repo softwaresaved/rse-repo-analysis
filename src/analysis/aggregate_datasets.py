@@ -404,6 +404,7 @@ def main(githubdir, eprintsdir, outdir, verbose):
     contents = readme_size_classification(contents)
     engagement_df = engagement_counts(stars, forks)
     contributors = team_size(contributions)
+    print(contributors.reset_index())
     max_active_contributors = contributors.reset_index().groupby("github_user_cleaned_url")["active_contributors"].max().rename("max_active_contributors")
     overall_df = pd.merge(
         pd.merge(
