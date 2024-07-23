@@ -141,6 +141,7 @@ dmypy.json
 !src/analysis/eprints.ipynb
 
 *.png
+#!data/derived/plots/overall/*.png
 
 data/debug/*
 !data/debug/representative_set.csv

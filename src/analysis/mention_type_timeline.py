@@ -2,9 +2,23 @@ import argparse
 import os
 import pandas as pd
 import seaborn as sns
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import timedelta
+
+SMALL_SIZE = 24
+MEDIUM_SIZE = 30
+
+plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+#plt.rc('axes', titlesize=MEDIUM_SIZE)     # fontsize of the axes title
+plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+plt.rc('axes', labelsize=SMALL_SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+plt.rc('figure', titlesize=MEDIUM_SIZE)  # fontsize of the figure title
 
 def main(githubdir, outdir):
     # load data mapping ePrints publication data to intent (produced by repo_intent.py)
@@ -17,7 +31,7 @@ def main(githubdir, outdir):
     df["created_at"] = pd.to_datetime(df.created_at)
     df["mention type"] = np.where(df["mention_created"], "created", "not created")
     # plot repo creation date against date listed in ePrints entry (assumed to be publication date)
-    ax = plt.axes()
+    fig, ax = plt.subplots(figsize=(10,8))
     ax.grid(True)
     
     xlim = [df["created_at"].min(), df["created_at"].max()]
@@ -34,12 +48,18 @@ def main(githubdir, outdir):
         x = "created_at",
         y = "eprints_date",
         hue="mention type",
+        s=80
     )
+
+    h,l = ax.get_legend_handles_labels()
+    ax.legend_.remove()
+    ax.legend(h, l, ncol=2, loc="upper center", bbox_to_anchor=(0.5, 1.13), borderpad=0.2)
+
     ax.set(xlabel="GitHub repository creation date",
            ylabel="publication date")  # it's usually the publication date, though not always
-    ax.set_title("Mention type depending on distance between repo creation and publication date")
+    ax.set_title("Mention type depending on difference\nbetween repo creation and publication date", pad=45)
     plt.tight_layout()
-    plt.savefig(os.path.join(outdir, "plots/overall/mention_type_timeline.png"))
+    plt.savefig(os.path.join(outdir, "plots/overall/mention_type_timeline.png"), bbox_inches="tight", transparent=True)
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(

@@ -91,24 +91,6 @@ def plot_contributing_file_present(contents, ax):
     ax.set_title("contributing file present")
     #ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
 
-def plot_emojis(contents, ax):
-    """Plot a histogram visualising the number of emojis found in repository READMEs.
-
-    Args:
-        contents (pd.DataFrame): contents data mined from GitHub
-        ax (Axes): subplot to use
-    """
-    bins = [0, 1, 2, 5, 10]
-    if contents.readme_emojis.max() > bins[-1]:
-        bins.append(contents.readme_emojis.max())
-    counts, bins = np.histogram(contents.readme_emojis, bins)
-    binlabels = [f"[{bins[i]} - {bins[i+1]})" for i in range(len(bins)-2)]
-    binlabels += [f"[{bins[-2]} - {bins[-1]}]"]
-    ax.barh(binlabels, counts)
-    ax.bar_label(ax.containers[0])
-    #ax.set(ylabel="number of emojis in README", xlabel="repository count")
-    ax.set_title("number of emojis in README")
-
 def plot_team_size(metadata, contributions, ax):
     """Plot a histogram visualising the maximum team size for a repository.
 
@@ -252,17 +234,15 @@ def main(data_dir, outdir, verbose, filter_path, tag):
         forks = forks.loc[forks.github_user_cleaned_url.isin(filtered)]
 
     info(verbose, "Plotting...")
-    fig = plt.figure(figsize=(20, 18))
-    ax5 = plt.subplot(16, 5, (61, 78))
-    ax4 = plt.subplot(16, 5, (46, 58), sharex=ax5)
-    ax2 = plt.subplot(16, 5, (21, 43), sharex=ax5)
-    ax1 = plt.subplot(16, 5, (1, 18), sharex=ax5)
+    fig = plt.figure(figsize=(20, 15))
+    ax5 = plt.subplot(8, 5, (26, 38))
+    ax4 = plt.subplot(8, 5, (16, 23), sharex=ax5)
+    ax1 = plt.subplot(8, 5, (1, 13), sharex=ax5)
     ax3 = plt.subplot(8, 5, (4, 15))
     ax6 = plt.subplot(8, 5, (19, 30))
     ax7 = plt.subplot(8, 5, (34, 40))
     fig.tight_layout(h_pad=0.5, w_pad=3, rect=(0.05, 0.05, 0.95, 0.95))
     plot_license_type(contents, ax1)
-    plot_emojis(contents, ax2)
     plot_contributing_file_present(contents, ax4)
     plot_team_size(metadata, contributions, ax5)
     plot_readme_size(contents, ax3, type="pie")
@@ -270,10 +250,10 @@ def main(data_dir, outdir, verbose, filter_path, tag):
     plot_table(metadata, stars, forks, ax7)
     if tag:
         plt.suptitle(f"Overall statistics for ePrints repositories ({tag})")
-        plt.savefig(os.path.join(outdir, "plots", "overall", f"overall_{tag}.png"), bbox_inches="tight", transparent=True)
+        plt.savefig(os.path.join(outdir, "plots", "overall", f"overall_reduced_{tag}.png"), bbox_inches="tight", transparent=True)
     else:
         plt.suptitle("Overall statistics for ePrints repositories")
-        plt.savefig(os.path.join(outdir, "plots", "overall", "overall.png"), bbox_inches="tight", transparent=True)
+        plt.savefig(os.path.join(outdir, "plots", "overall", "overall_reduced.png"), bbox_inches="tight", transparent=True)
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(
