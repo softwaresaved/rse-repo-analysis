@@ -8,6 +8,18 @@ import matplotlib
 matplotlib.use("Agg")
 from matplotlib import pyplot as plt
 
+SMALL_SIZE = 24
+MEDIUM_SIZE = 30
+
+plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+#plt.rc('axes', titlesize=MEDIUM_SIZE)     # fontsize of the axes title
+plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+plt.rc('axes', labelsize=SMALL_SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+plt.rc('figure', titlesize=MEDIUM_SIZE)  # fontsize of the figure title
+
 def info(verbose, msg):
     if verbose:
         print(f"[INFO] {msg}")
@@ -156,7 +168,7 @@ def contributor_team(contributions, metadata, forks, stars, axs):
         ax=axs[1],
         lw=2,
         # xlabel="week since repo creation",
-        ylabel="number of contributors",
+        ylabel="number of\ncontributors",
     )
     # overall pool of contributors
     contributor_pool_df = team_df.groupby(level="author").cumsum()
@@ -294,10 +306,20 @@ def date_highlights(readme_history, contents, metadata, paper_data, ax, overlay_
     labels = ["ownership heading", "usage heading", "citation in README", "citation file", "contributing file", "mention in publication"]
     prop_cycle = plt.rcParams['axes.prop_cycle']
     colors = prop_cycle.by_key()['color']
-    ymax = 86
+    ymax = 100
     for i in range(len(data)):
         ax.scatter(data[i], ys[i], marker="^", s=100, label=labels[i], color=colors[i])
-        overlay_ax.vlines(data[i], ys[i], ymax, linestyles='dashed', color=colors[i])
+        # adjust for legend spacing
+        overlay_ax.vlines(data[i], np.array(ys[i])+5, ymax, linestyles='dashed', color=colors[i])
+
+def init_user_mapping(contributions, issues):
+    commit_authors_dated = contributions[contributions.commits > 0].groupby("author").week_co.min()
+    issue_authors_dated = issues.groupby("user").created_at.min()
+    issue_resolvers_dated = issues.groupby("closed_by").closed_at.min()
+    all_user_df = pd.concat([commit_authors_dated, issue_authors_dated, issue_resolvers_dated], axis=1)
+    all_users_sorted = all_user_df.min(axis=1, numeric_only=False).sort_values().index.to_list()
+    user_mapping = {user: f"U{i}" for i, user in enumerate(all_users_sorted)}
+    return user_mapping
 
 def main(repo, githubdir, eprintsdir, output_dir, verbose):
     info(verbose, f"Loading data for repo {repo}...")
@@ -310,6 +332,13 @@ def main(repo, githubdir, eprintsdir, output_dir, verbose):
     stars = load_data(githubdir, "stars.csv", repo, "date")
     paper_data = load_data(os.path.join(eprintsdir, "cleaned_repo_urls"), "joined.csv", repo, "date")
     info(verbose, "Data loading complete.")
+
+    # anonymise user IDs
+    user_mapping = init_user_mapping(contributions, issues)
+    contributions = contributions.replace(user_mapping)
+    forks = forks.replace(user_mapping)
+    issues = issues.replace(user_mapping)
+    stars = stars.replace(user_mapping)
 
     analysis_end_date = contributions.week_co.max() + timedelta(days=7)
 
@@ -339,18 +368,18 @@ def main(repo, githubdir, eprintsdir, output_dir, verbose):
     axs[4].legend(loc="upper right")
     axs[4].grid(True)    
     date_highlights(readme_history, contents, metadata, paper_data, axs[5], overlay_axis)
-    axs[5].legend(loc="upper right", ncols=2)
+    axs[5].legend(loc="upper right", ncols=3)
     # final adjustments
-    ymax = 86
+    ymax = 100
     xl, xr = plt.xlim()
     plt.xlim(xl, xr+15)
-    overlay_axis.set(xlim=(xl, xr+15), ylim=(-6, ymax))
-    fig.suptitle(repo)
+    overlay_axis.set(xlim=(xl, xr+15), ylim=(0, ymax))
+    #fig.suptitle(repo)
     s = repo.replace("/", "-")
     fig.tight_layout(rect=[0, 0.03, 1, 0.98])
     os.makedirs(output_dir, exist_ok=True)
-    plt.savefig(os.path.join(output_dir, f"{s}.png"), bbox_inches="tight")
-    info(verbose, f"Plot saved in {output_dir}, file {s}.png.")
+    plt.savefig(os.path.join(output_dir, f"{s}_ANON.png"), bbox_inches="tight")
+    info(verbose, f"Plot saved in {output_dir}, file {s}_ANON.png.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
