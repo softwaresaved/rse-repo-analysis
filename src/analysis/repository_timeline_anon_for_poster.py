@@ -77,8 +77,8 @@ def engagement_user_highlights(users, metadata, forks, stars, ax):
     user_forks["week_since_repo_creation"] = (user_forks.date - user_forks.created_at).dt.days // 7
     user_stars = pd.merge(stars[stars.user.isin(users)], metadata, on="github_user_cleaned_url")
     user_stars["week_since_repo_creation"] = (user_stars.date - user_stars.created_at).dt.days // 7
-    ax.scatter(user_forks.week_since_repo_creation, user_forks.user, marker="v", s=100, label="forked")
-    ax.scatter(user_stars.week_since_repo_creation, user_stars.user, marker="v", s=100, label="starred")
+    ax.scatter(user_forks.week_since_repo_creation, user_forks.user, marker="v", s=100, label="forked", c="#ee7733")
+    ax.scatter(user_stars.week_since_repo_creation, user_stars.user, marker="v", s=100, label="starred", c="#009988")
 
 def user_type_wrt_issues(issues, metadata, forks, stars, analysis_end_date, ax):
     """Plot every user's issue interaction type (opening issues, closing issues, both) with engagement highlight dates scattered on top.
@@ -120,7 +120,7 @@ def user_type_wrt_issues(issues, metadata, forks, stars, analysis_end_date, ax):
         y="user",
         hue="status",
         hue_order=["inactive", "opening", "closing", "both"],
-        palette=['#d62728', '#1f77b4', '#ff7f0e', '#2ca02c'],
+        palette=['#cc3311', '#0077bb', '#ee7733', '#009988'],
         marker="|",
         s=500,
         )
@@ -154,7 +154,7 @@ def contributor_team(contributions, metadata, forks, stars, axs):
         y="author",
         hue="active contributors",
         hue_order=["inactive", "active"],
-        palette=['#d62728', '#2ca02c'],
+        palette=['#cc3311', '#009988'],
         marker="|",
         s=500,
     )
@@ -167,6 +167,7 @@ def contributor_team(contributions, metadata, forks, stars, axs):
     team_size.plot(
         ax=axs[1],
         lw=2,
+        color="#0077bb",
         # xlabel="week since repo creation",
         ylabel="number of\ncontributors",
     )
@@ -177,6 +178,7 @@ def contributor_team(contributions, metadata, forks, stars, axs):
     contrib_pool.plot(
         ax=axs[1],
         lw=2,
+        color="#ee7733",
     )
 
 def no_open_and_closed_issues(issues, metadata, analysis_end_date, ax):
@@ -210,6 +212,7 @@ def no_open_and_closed_issues(issues, metadata, analysis_end_date, ax):
         ax=ax,
         x="week_since_repo_creation",
         y=["open issues", "closed issues"],
+        color=["#0077bb", "#ee7733"],
         lw=2,
         # xlabel="week since repo creation",
         ylabel="issue count"
@@ -242,7 +245,8 @@ def engagement(forks, stars, metadata, analysis_end_date, ax):
     engagement_df.plot(
         ax=ax,
         lw=2,
-        ylabel="count"
+        ylabel="count",
+        color=["#0077bb", "#ee7733"],
     )
     
 def calc_y_timeline(data):
@@ -304,8 +308,7 @@ def date_highlights(readme_history, contents, metadata, paper_data, ax, overlay_
     data = [ownership_added, usage_added, citation_added, citation_file_added, contributing_file_added, paper_published]
     ys = calc_y_timeline(data)
     labels = ["ownership heading (add/change)", "usage heading (add/change)", "citation in README (add/change)", "citation file added", "contributing file added", "mention in publication"]
-    prop_cycle = plt.rcParams['axes.prop_cycle']
-    colors = prop_cycle.by_key()['color']
+    colors = ["#0077bb", "#33bbee", "#009988", "#ee7733", "#cc3311", "#ee3377"]
     ymax = 100
     for i in range(len(data)):
         ax.scatter(data[i], ys[i], marker="^", s=100, label=labels[i], color=colors[i])

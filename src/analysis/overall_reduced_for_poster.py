@@ -67,6 +67,7 @@ def plot_license_type(contents, ax):
     contents.license_type.value_counts().sort_index().plot(
         kind='barh',
         ax=ax,
+        color="#0077bb",
         #ylabel="license type",
         #xlabel="repository count"
     )
@@ -84,6 +85,7 @@ def plot_contributing_file_present(contents, ax):
     pd.notna(contents.contributing_added).value_counts().plot(
         kind='barh',
         ax=ax,
+        color="#0077bb",
         #ylabel="contributing file",
         #xlabel="repository count"
     )
@@ -116,7 +118,7 @@ def plot_team_size(metadata, contributions, ax):
     counts, bins = np.histogram(max_team_size, bins)
     binlabels = [f"[{bins[i]} - {bins[i+1]})" for i in range(len(bins)-2)]
     binlabels += [f"[{bins[-2]} - {bins[-1]}]"]
-    ax.barh(binlabels, counts)
+    ax.barh(binlabels, counts, color="#0077bb")
     ax.bar_label(ax.containers[0])
     #ax.set(ylabel="maximum team size", xlabel="repository count")
     ax.set(xlabel="repository count")
@@ -132,7 +134,7 @@ def plot_readme_size(contents, ax, type="bar"):
     """
     bins = [0, 1, 300, 1500, 10000]
     binmeanings = ["none", "ultra-short", "short", "informative", "detailed"]
-    colours = ["#3875b1", "#f1882e", "#4d9d39", "#c73f30", "#8e6aba"]
+    colours = ["#0077bb", "#33bbee", "#009988", "#ee7733", "#cc3311"]
     if contents.readme_size.max() > bins[-1]:
         bins.append(contents.readme_size.max())
     counts, bins = np.histogram(contents.readme_size, bins)
