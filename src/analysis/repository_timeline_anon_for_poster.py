@@ -303,7 +303,7 @@ def date_highlights(readme_history, contents, metadata, paper_data, ax, overlay_
     ax.spines['left'].set_visible(False)
     data = [ownership_added, usage_added, citation_added, citation_file_added, contributing_file_added, paper_published]
     ys = calc_y_timeline(data)
-    labels = ["ownership heading", "usage heading", "citation in README", "citation file", "contributing file", "mention in publication"]
+    labels = ["ownership heading (add/change)", "usage heading (add/change)", "citation in README (add/change)", "citation file added", "contributing file added", "mention in publication"]
     prop_cycle = plt.rcParams['axes.prop_cycle']
     colors = prop_cycle.by_key()['color']
     ymax = 100
@@ -346,7 +346,7 @@ def main(repo, githubdir, eprintsdir, output_dir, verbose):
         info(verbose, f"Not enough data available for {repo}.")
         exit()
 
-    fig = plt.figure(figsize=(20, 20))
+    fig = plt.figure(figsize=(16, 20))
     overlay_axis = fig.subplots()
     overlay_axis.axis('off')
     axs = fig.subplots(nrows=6, sharex=True, height_ratios=[3, 3, 2, 2, 2, 1])
@@ -368,7 +368,7 @@ def main(repo, githubdir, eprintsdir, output_dir, verbose):
     axs[4].legend(loc="upper right")
     axs[4].grid(True)    
     date_highlights(readme_history, contents, metadata, paper_data, axs[5], overlay_axis)
-    axs[5].legend(loc="upper right", ncols=3)
+    axs[5].legend(loc="upper right", ncols=2)
     # final adjustments
     ymax = 100
     xl, xr = plt.xlim()

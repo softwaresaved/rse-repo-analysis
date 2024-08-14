@@ -136,8 +136,9 @@ def plot_readme_size(contents, ax, type="bar"):
     if contents.readme_size.max() > bins[-1]:
         bins.append(contents.readme_size.max())
     counts, bins = np.histogram(contents.readme_size, bins)
-    binlabels = [f"{binmeanings[i]}\n[{bins[i]} - {bins[i+1]})" for i in range(len(bins)-2)]
-    binlabels += [f"{binmeanings[-1]}\n[{bins[-2]} - {bins[-1]}]"]
+    binlabels = [f"{binmeanings[i]}" for i in range(len(bins)-1)]
+    #binlabels = [f"{binmeanings[i]}\n[{bins[i]} - {bins[i+1]})" for i in range(len(bins)-2)]
+    #binlabels += [f"{binmeanings[-1]}\n[{bins[-2]} - {bins[-1]}]"]
     if type=="bar":
         ax.barh(binlabels, counts)
         ax.bar_label(ax.containers[0])
@@ -146,7 +147,10 @@ def plot_readme_size(contents, ax, type="bar"):
     elif type=="pie":
         # remove empty bins
         ax.pie(counts[np.nonzero(counts)], labels=np.array(binlabels)[np.nonzero(counts)], autopct='%1.1f%%', colors=np.array(colours)[np.nonzero(counts)])
-        ax.set(xlabel="size of README in Bytes")
+        ax.set_title("size of README in Bytes")
+    print("README size bin counts")
+    print(binmeanings)
+    print(counts)
 
 def plot_headings(readme_df, ax):
     """Plot a wordcloud from the headings used in README files. Excludes some manually defined words that skew the results too much to be meaningful.
@@ -169,7 +173,10 @@ def plot_headings(readme_df, ax):
     wordcloud = WordCloud(
         collocation_threshold=15,
         stopwords=stopwords,
-        scale=10,
+        #scale=10,
+        min_font_size=16,
+        width=850,
+        height=800,
         background_color="white",
         random_state=42
         ).generate(" ".join(headings))
@@ -209,7 +216,7 @@ def plot_table(metadata, stars, forks, ax):
     table.set_fontsize(SMALL_SIZE)
     table.scale(1, 3)
     ax.set_axis_off()
-    ax.set_title("Summary statistics", pad=25)
+    ax.set_title("Summary statistics")
 
 def main(data_dir, outdir, verbose, filter_path, tag):
     info(verbose, "Loading data...")
@@ -233,26 +240,31 @@ def main(data_dir, outdir, verbose, filter_path, tag):
         stars = stars.loc[stars.github_user_cleaned_url.isin(filtered)]
         forks = forks.loc[forks.github_user_cleaned_url.isin(filtered)]
 
+    print("README mean, median:", (contents.readme_size.mean(), contents.readme_size.median()))
+    print("No README", contents[contents.readme_size == 0].github_user_cleaned_url)
+    repos_with_cites_in_README = readme_df[readme_df.added_cites != "[]"].github_user_cleaned_url.unique()
+    overall_repos = readme_df.github_user_cleaned_url.unique()
+    print(f"DOI: {len(repos_with_cites_in_README)/len(overall_repos)*100} %, {len(repos_with_cites_in_README)}/{len(overall_repos)}")
+    print(f"Citation file: {len(contents[contents.citation_added.notna()].github_user_cleaned_url.unique())}")
+
     info(verbose, "Plotting...")
-    fig = plt.figure(figsize=(20, 15))
-    ax5 = plt.subplot(8, 5, (26, 38))
-    ax4 = plt.subplot(8, 5, (16, 23), sharex=ax5)
-    ax1 = plt.subplot(8, 5, (1, 13), sharex=ax5)
-    ax3 = plt.subplot(8, 5, (4, 15))
-    ax6 = plt.subplot(8, 5, (19, 30))
-    ax7 = plt.subplot(8, 5, (34, 40))
+    fig = plt.figure(figsize=(12, 20))
+    ax1 = plt.subplot(4, 2, 1)
+    ax2 = plt.subplot(4, 2, 2)
+    ax3 = plt.subplot(4, 2, (3, 4))
+    ax4 = plt.subplot(4, 2, (5, 6))
+    ax5 = plt.subplot(4, 2, (7, 8), sharex=ax4)
     fig.tight_layout(h_pad=0.5, w_pad=3, rect=(0.05, 0.05, 0.95, 0.95))
-    plot_license_type(contents, ax1)
-    plot_contributing_file_present(contents, ax4)
+    plot_license_type(contents, ax4)
     plot_team_size(metadata, contributions, ax5)
-    plot_readme_size(contents, ax3, type="pie")
-    plot_headings(readme_df, ax6)
-    plot_table(metadata, stars, forks, ax7)
+    plot_readme_size(contents, ax1, type="pie")
+    plot_headings(readme_df, ax2)
+    plot_table(metadata, stars, forks, ax3)
     if tag:
-        plt.suptitle(f"Overall statistics for ePrints repositories ({tag})")
+        plt.suptitle(f"Overall statistics for {tag} repositories")
         plt.savefig(os.path.join(outdir, "plots", "overall", f"overall_reduced_{tag}.png"), bbox_inches="tight", transparent=True)
     else:
-        plt.suptitle("Overall statistics for ePrints repositories")
+        plt.suptitle("Overall statistics for RSE repositories")
         plt.savefig(os.path.join(outdir, "plots", "overall", "overall_reduced.png"), bbox_inches="tight", transparent=True)
 
 if __name__=="__main__":

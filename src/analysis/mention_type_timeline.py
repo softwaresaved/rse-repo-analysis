@@ -31,7 +31,7 @@ def main(githubdir, outdir):
     df["created_at"] = pd.to_datetime(df.created_at)
     df["mention type"] = np.where(df["mention_created"], "created", "not created")
     # plot repo creation date against date listed in ePrints entry (assumed to be publication date)
-    fig, ax = plt.subplots(figsize=(10,8))
+    fig, ax = plt.subplots(figsize=(11,8))
     ax.grid(True)
     
     xlim = [df["created_at"].min(), df["created_at"].max()]
@@ -57,7 +57,7 @@ def main(githubdir, outdir):
 
     ax.set(xlabel="GitHub repository creation date",
            ylabel="publication date")  # it's usually the publication date, though not always
-    ax.set_title("Mention type depending on difference\nbetween repo creation and publication date", pad=45)
+    ax.set_title("Mention type and repository age at mention", pad=45)
     plt.tight_layout()
     plt.savefig(os.path.join(outdir, "plots/overall/mention_type_timeline.png"), bbox_inches="tight", transparent=True)
 
